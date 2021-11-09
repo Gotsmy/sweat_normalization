@@ -115,3 +115,69 @@ def generate_random_kinetic_data(n_known_metabolites,n_metabolites,toy_parameter
     # calculate concentration time series
     c_tensor = em.bateman(time_tensor,tot_parameter_tensor)
     return c_tensor
+
+def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parameters,timepoints,bounds_per_metabolite):
+    '''
+    Samples a mean and standard deviation for each metabolite from a distribution following measured values and
+    then uses the sampeled mean and SD to sample concentration values from a log-normal distribution. The
+    sampled concentration time series are then concatenated to the toy model concentration time series.
+    -
+    Input
+    n_known_metabolites    Int. Number of metabolites in the toy model, in this study 4.
+    n_metabolites          Int. Total number of metabolites for which measured data needs to be generated.
+    toy_parameters         Numpy.ndarray of shape (5, n_known_parameters) with parameters of basic toy model.
+    timepoints             Numpy.ndarray of shape (n_timepoints) of time points.
+    bounds_per_metabolite  Numpy.ndarray of shape (5) of upper bounds of kinetic constants for one metabolite.
+                           Kinetic parameters are sampled between 0 and bounds_per_metabolite for n_metabolites
+                           - n_known_metabolites.
+    - 
+    Output
+    c_tensor               Numpy.ndarray of shape (n_metabolites, n_timepoints)
+    '''
+    
+    n_timepoints = len(timepoints)
+    # sample random values - no kinetics
+    random_c = []
+    for i in range(n_metabolites-n_known_metabolites):
+        tmp_mean = 0
+        while tmp_mean <= 0:
+            # sampling from a distribution that describes the 
+            # means of all features in the finger sweat data set
+            tmp_mean = np.random.pareto(0.32503106)
+        tmp_std = 0
+        while tmp_std <= 0:
+            # sampling from a distribution that describes the 
+            # standard deviation of all features in the finger sweat data set
+            tmp_std  = np.random.lognormal(-0.35532911,  0.51296446)
+        # scaling mu and s to their correspoing versions for the np.random.lognormal function
+        mu  = 1
+        s   = tmp_std
+        mu_ = np.log(mu**2*np.sqrt(1/(s**2+mu)))
+        s_  = np.sqrt(np.log(s**2+1))
+        tmp_c = np.random.lognormal(mu_,s_,len(timepoints))*tmp_mean
+        random_c.append(tmp_c)
+    random_c_tensor = np.array(random_c)
+    
+    # reshape the toy parameters
+    toy_parameters = np.swapaxes(toy_parameters,1,0)
+    # append toy and sampled parameters
+    tot_parameters = np.hstack([toy_parameters])
+    # create time tensor for calculation of concentration time series
+    time_tensor  = np.tile(timepoints,tot_parameters.shape[1]).reshape(tot_parameters.shape[1],-1)
+    # create a parameter tensor for calculation of concentration time series
+    tot_parameter_tensor = np.repeat([tot_parameters[0::5],
+                                      tot_parameters[1::5],
+                                      tot_parameters[2::5],
+                                      tot_parameters[3::5],
+                                      tot_parameters[4::5]],
+                                     n_timepoints).reshape(-1,tot_parameters.shape[1],n_timepoints)
+    # calculate concentration time series
+    known_c_tensor = em.bateman(time_tensor,tot_parameter_tensor)
+    
+    # combine known kinetic and random number concentrations
+    if n_known_metabolites != n_metabolites:
+        c_tensor = np.vstack([known_c_tensor,random_c_tensor])
+    else:
+        c_tensor = known_c_tensor
+
+    return c_tensor

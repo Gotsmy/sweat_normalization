@@ -112,10 +112,10 @@ if __name__ == "__main__":
     ## BEGIN INPUT PARAMETERS ##
     bounds_per_metabolite  = [3,3,5,15,3]
     for error_sigma in [.2]:
-        for n_metabolites in [4,60,10,20,40]:
+        for n_metabolites in [6,60,10,20,40]:
             print('error sigma  ',error_sigma)
             print('n_metabolites',n_metabolites)
-            n_replicates        = 100
+            n_replicates        = 2
             n_timepoints        = len(timepoints)
             n_known_metabolites = 4
             n_cpu               = 200
@@ -141,14 +141,14 @@ if __name__ == "__main__":
                 sv_vector = sv_v_list[n_replicate]
                 e_tensor  = e_list[n_replicate]
                 # get concentration values
-                c_tensor = sdg.generate_random_kinetic_data(n_known_metabolites,n_metabolites,toy_parameters,timepoints,bounds_per_metabolite)
+                c_tensor = sdg.generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parameters,timepoints,bounds_per_metabolite)
                 # calculate M_tilde
                 m_tensor     = c_tensor * sv_tensor * e_tensor
                 # scaling can be done for a faster convergence. Since over all time points is the same this does not affect normalization.
                 if n_metabolites != n_known_metabolites:
                     for i in range(4,n_metabolites):
                         m_tensor[i] = m_tensor[i]/np.max(m_tensor[i])
-                        
+                
                 ## CREATE BOUNDS FOR THE MODEL
                 # full model
                 full_lb = np.concatenate((np.zeros(5*n_metabolites),np.ones(n_timepoints)*.05))
@@ -207,10 +207,10 @@ if __name__ == "__main__":
                 raw_values['C'].append(c_tensor)
                 raw_values['SV'].append(sv_vector)
                 raw_values['M'].append(m_tensor)
-                
+
             # pickle results
             to_pickle = [results_time,results_sv,results_model,raw_values]
-            with open(f'simulation_results/v1_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
+            with open(f'simulation_results/v2_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
                     pickle.dump(to_pickle,file)
 
     print('done')
