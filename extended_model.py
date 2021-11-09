@@ -39,63 +39,74 @@ def fun_1(time,p):
 class extended_model():
     '''
     Builds a kinetic model for an arbitrary number of metabolites with the kinetic 
-    function defined in self._func.
+    function defined in self._fun.
     '''
     
-    def __init__(self,time,length,fun='bateman'):
-        self.time   = time
-        self.length = length
-        self.size   = len(self.time)
-        self._time_tensor = np.tile(self.time,self.length).reshape(self.length,-1)
-        self.fun_name = fun
-        self.sigma = np.ones(self.length*self.size)
-        self._has_bounds = False
+    def __init__(self,time,n_metabolites,fun='bateman'):
+        '''
+        Initialization.
+        -
+        Input
+        time             nd.array of time points of measurements.
+        n_metabolites    int. number of metabolites measured.
+        fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
+        -
+        Output
+        extended_model class
+        '''
+        self.time          = time
+        self.n_metabolites = n_metabolites
+        self.n_timepoints  = len(self.time)
+        self._time_tensor  = np.tile(self.time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        self.fun_name      = fun
+        self.sigma         = np.ones(self.n_metabolites*self.n_timepoints)
+        self._has_bounds   = False
         self._has_metabolite_names = False
         self._has_measured_data = False
         self._has_pqn_data = False
         # optimization parameters
-        self._is_optimized  = False
-        self.SSE            = np.nan
-        self._loss_function = None
+        self._is_optimized = False
+        self.SSE           = np.nan
+        self._loss_function= None
         
         if fun == 'bateman':
-            self._func  = bateman
-            self._func_parameter_number = 5
+            self._fun  = bateman
+            self._fun_parameter_number = 5
             self._get_tensor_parameters = self._get_tensor_parameters_5
         elif fun == 'fun_1':
-            self._func = fun_1
-            self._func_parameter_number = 4
+            self._fun = fun_1
+            self._fun_parameter_number = 4
             self._get_tensor_parameters = self._get_tensor_parameters_4
         else:
-            print('self._func could not be determined.')
+            print('self._fun could not be determined.')
             
         # generate initial parameters depending on how many are needed.
-        self.parameters = np.concatenate((np.zeros(self.length*self._func_parameter_number),np.ones(len(self.time))),axis=0)
+        self.parameters = np.concatenate((np.zeros(self.n_metabolites*self._fun_parameter_number),np.ones(len(self.time))),axis=0)
         
             
     def get_kinetic_parameters(self):
         '''Returns array of all kinetic parameters of the model.'''
-        return self.parameters[:self.length*self._func_parameter_number]
+        return self.parameters[:self.n_metabolites*self._fun_parameter_number]
     
     def get_sweat_volumes(self):
         '''Returns array of all sweat volume parameters of the model.'''
-        return self.parameters[self.length*self._func_parameter_number:]
+        return self.parameters[self.n_metabolites*self._fun_parameter_number:]
     
     def set_parameters(self,parameters):
         '''Updates the parameter values of the model.'''
-        assert len(parameters) == self.length*self._func_parameter_number+self.size, 'Shape of parameters is incorrect. {} should be {}..'.format(len(parameters),self.length*self._func_parameter_number+len(self.time))
+        assert len(parameters) == self.n_metabolites*self._fun_parameter_number+self.n_timepoints, 'Shape of parameters is incorrect. {} should be {}..'.format(len(parameters),self.n_metabolites*self._fun_parameter_number+len(self.time))
         self.parameters = parameters
         
     def _get_tensor_parameters_5(self):
-        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (5, self.length, self.size)'''
+        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (5, self.n_metabolites, self.n_timepoints)'''
         tmp = self.get_kinetic_parameters()
-        p_k = np.repeat([tmp[0::5],tmp[1::5],tmp[2::5],tmp[3::5],tmp[4::5]],self.size).reshape(-1,self.length,self.size)
+        p_k = np.repeat([tmp[0::5],tmp[1::5],tmp[2::5],tmp[3::5],tmp[4::5]],self.n_timepoints).reshape(-1,self.n_metabolites,self.n_timepoints)
         return p_k
 
     def _get_tensor_parameters_4(self):
-        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (4, self.length, self.size)'''
+        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (4, self.n_metabolites, self.n_timepoints)'''
         tmp = self.get_kinetic_parameters()
-        p_k = np.repeat([tmp[0::4],tmp[1::4],tmp[2::4],tmp[3::4]],self.size).reshape(-1,self.length,self.size)
+        p_k = np.repeat([tmp[0::4],tmp[1::4],tmp[2::4],tmp[3::4]],self.n_timepoints).reshape(-1,self.n_metabolites,self.n_timepoints)
         return p_k
     
     def set_loss_function(self,loss_name):
@@ -126,8 +137,8 @@ class extended_model():
         self.time       IS NOT updated.
         '''
         self.parameters = np.array(parameters)
-        sweat_volumes = np.tile(self.get_sweat_volumes(),self.length).reshape(self.length,self.size)
-        y = self._func(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
+        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
         return y.flatten('F')
     
     def fit_tensor(self,time,*parameters):
@@ -137,8 +148,8 @@ class extended_model():
         self.time       IS NOT updated.
         '''
         self.parameters = np.array(parameters)
-        sweat_volumes = np.tile(self.get_sweat_volumes(),self.length).reshape(self.length,self.size)
-        y = self._func(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
+        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
         return y
     
     def plot(self,time,*parameters):
@@ -147,13 +158,13 @@ class extended_model():
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
         '''
-        time_tensor = np.tile(time,self.length).reshape(self.length,-1)
-        tmp_size = self.size
+        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
-        self.size=len(time)
+        self.n_timepoints=len(time)
         self.parameters = np.array(parameters)
-        y = self._func(time_tensor,self._get_tensor_parameters())
-        self.size=tmp_size
+        y = self._fun(time_tensor,self._get_tensor_parameters())
+        self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
         return y.flatten('F')
     
@@ -163,13 +174,13 @@ class extended_model():
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
         '''
-        time_tensor = np.tile(time,self.length).reshape(self.length,-1)
-        tmp_size = self.size
+        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
-        self.size=len(time)
+        self.n_timepoints=len(time)
         self.parameters = np.array(parameters)
-        y = self._func(time_tensor,self._get_tensor_parameters())
-        self.size=tmp_size
+        y = self._fun(time_tensor,self._get_tensor_parameters())
+        self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
         return y
     
@@ -178,9 +189,9 @@ class extended_model():
         If metabolites are named it is possible to save their names in the model class.
         -
         Input
-        metabolite_names    List or nd.array of shape (self.length).
+        metabolite_names    List or nd.array of shape (self.n_metabolites).
         '''
-        assert len(metabolite_names) == self.length
+        assert len(metabolite_names) == self.n_metabolites
         self.metabolite_names = metabolite_names
         self._has_metabolite_names = True
         
@@ -205,9 +216,9 @@ class extended_model():
         There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
         - 
         Input
-        sigma    List or array of shape (self.size * self.length).
+        sigma    List or array of shape (self.n_timepoints * self.n_metabolites).
         '''
-        assert len(sigma) == self.size*self.length
+        assert len(sigma) == self.n_timepoints*self.n_metabolites
         self.sigma = np.array(sigma)
         
     def set_measured_data(self,measured_data):
@@ -216,9 +227,9 @@ class extended_model():
         scipy.optimize.curve_fit function and the model will be optimized to be as close as possible to it. 
         -
         Input
-        measured_data    Flattened array of measured data of shape (self.size * self.length).
+        measured_data    Flattened array of measured data of shape (self.n_timepoints * self.n_metabolites).
         '''
-        assert len(measured_data) == self.length*self.size
+        assert len(measured_data) == self.n_metabolites*self.n_timepoints
         self.measured_data = measured_data
         self._has_measured_data = True
         
@@ -230,8 +241,8 @@ class extended_model():
         DataFrame    pd.DataFrame
         '''
         model_properties = {
-            'length':[self.length],
-            'size':[self.size],
+            'n_metabolites':[self.n_metabolites],
+            'n_timepoints':[self.n_timepoints],
             'fun':[self.fun_name],
             'parameters':[len(self.parameters)],
             'bounds':[self._has_bounds],
@@ -310,7 +321,7 @@ class extended_model():
         self.set_parameters(best_parameter)
         self._is_optimized = True
         self.SSE = np.min(_output[:,-1])
-        if type(self) == extended_model_numpy_pqn:
+        if type(self) == extended_mix_model:
             self.x = _output[np.argmin(_output[:,-1]),0]
         return _output
     
@@ -344,9 +355,22 @@ class extended_model():
     
 # MIX model
 class extended_mix_model(extended_model):
-    def __init__(self,time,length,fun='bateman'):
-        super().__init__(time,length,fun='bateman')
-        self.sigma = np.ones((self.length+1)*self.size)
+    def __init__(self,time,n_metabolites,fun='bateman'):
+        '''
+        Initialization.
+        -
+        Input
+        time             nd.array of time points of measurements.
+        n_metabolites    int. number of metabolites measured.
+        fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
+        -
+        Output
+        extended_model class
+        '''
+        
+        super().__init__(time,n_metabolites,fun='bateman')
+        self.sigma = np.ones((self.n_metabolites+1)*self.n_timepoints)
+        # self.x is the additional scaling parameter used to scale PQN normalization factors to V_sweat
         self.x = np.nan
         
         
@@ -371,9 +395,9 @@ class extended_mix_model(extended_model):
         scipy.optimize.curve_fit function and the model will be optimized to be as close as possible to it. 
         -
         Input
-        measured_data    Flattened array of measured data of shape (self.size * self.length).
+        measured_data    Flattened array of measured data of shape (self.n_timepoints * self.n_metabolites).
         '''
-        assert len(np.concatenate([measured_data,pqn_data])) == (self.length+1)*self.size
+        assert len(np.concatenate([measured_data,pqn_data])) == (self.n_metabolites+1)*self.n_timepoints
         self.measured_data = np.concatenate([measured_data,pqn_data])
         self._has_measured_data = True
         
@@ -383,9 +407,9 @@ class extended_mix_model(extended_model):
         There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
         - 
         Input
-        sigma    List or array of shape (self.size * self.length + 1).
+        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
         '''
-        assert len(sigma) == self.size*(self.length+1)
+        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1)
         self.sigma = sigma
         
     def fit(self,time,x,*parameters):
@@ -398,8 +422,8 @@ class extended_mix_model(extended_model):
         self.parameters = np.array(parameters)
         self.x = x
         sweat_volumes = self.get_sweat_volumes()
-        sweat_volumes_tensor = np.tile(sweat_volumes,self.length).reshape(self.length,self.size)
-        y1 = self._func(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
+        sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y1 = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
         y  = np.concatenate([y1.flatten('F'),sweat_volumes*x])
         return y
     
@@ -410,15 +434,15 @@ class extended_mix_model(extended_model):
         self.time       IS NOT updated.
         '''
         assert len(parameters) == len(self.parameters)
-        time_tensor = np.tile(time,self.length).reshape(self.length,-1)
-        tmp_size = self.size
+        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
-        self.size=len(time)
+        self.n_timepoints=len(time)
         self.parameters = np.array(parameters)
-        y1 = self._func(time_tensor,self._get_tensor_parameters())
+        y1 = self._fun(time_tensor,self._get_tensor_parameters())
         y2 = self.get_sweat_volumes()
         y  = np.concatenate([y1.flatten('F'),y2*x])
-        self.size=tmp_size
+        self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
         return y
     
