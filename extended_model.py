@@ -9,11 +9,11 @@ def bateman(time,p):
     Calculates a Modified Bateman Concentration Time Series.
     -
     Input
-    time      nd.array of shape (n,t) with n metabolites and t timepoints.
-    p         nd.array of shape (5,n,t) with 5 kinetic parameters (ka, ke, c0, lag, d), n metabolites, and t timepoints
+    time      numpy.ndarray of shape (n,t) with n metabolites and t timepoints.
+    p         numpy.ndarray of shape (5,n,t) with 5 kinetic parameters (ka, ke, c0, lag, d), n metabolites, and t timepoints
     - 
     Output
-    y         nd.array of shape (n,t) of metabolite concentrations.
+    y         numpy.ndarray of shape (n,t) of metabolite concentrations.
     '''
     with np.errstate(all='ignore'):
         y = p[0]/(p[1]-p[0])*(np.exp(-p[0]*(time-p[3]))-np.exp(-p[1]*(time-p[3])))*p[2]
@@ -25,11 +25,11 @@ def fun_1(time,p):
     Simplified function describing a Bateman-like concentration time series.
     -
     Input
-    time      nd.array of shape (n,t) with n metabolites and t timepoints.
-    p         nd.array of shape (4,n,t) with 5 kinetic parameters (ke, c0, lag, d), n metabolites, and t timepoints
+    time      numpy.ndarray of shape (n,t) with n metabolites and t timepoints.
+    p         numpy.ndarray of shape (4,n,t) with 4 kinetic parameters (ke, c0, lag, d), n metabolites, and t timepoints
     - 
     Output
-    y         nd.array of shape (n,t) of metabolite concentrations.
+    y         numpy.ndarray of shape (n,t) of metabolite concentrations.
     '''
     y = p[1]*(time-p[2])*np.exp(-p[0]*time)
     y = np.clip(y,a_min=0,a_max=np.inf)+p[3]
@@ -47,7 +47,7 @@ class extended_model():
         Initialization.
         -
         Input
-        time             nd.array of time points of measurements.
+        time             numpy.ndarray of time points of measurements.
         n_metabolites    int. number of metabolites measured.
         fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
         -
@@ -189,7 +189,7 @@ class extended_model():
         If metabolites are named it is possible to save their names in the model class.
         -
         Input
-        metabolite_names    List or nd.array of shape (self.n_metabolites).
+        metabolite_names    List or numpy.ndarray of shape (self.n_metabolites).
         '''
         assert len(metabolite_names) == self.n_metabolites
         self.metabolite_names = metabolite_names
@@ -360,7 +360,7 @@ class extended_mix_model(extended_model):
         Initialization.
         -
         Input
-        time             nd.array of time points of measurements.
+        time             numpy.ndarray of time points of measurements.
         n_metabolites    int. number of metabolites measured.
         fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
         -
