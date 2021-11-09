@@ -112,13 +112,13 @@ if __name__ == "__main__":
     ## BEGIN INPUT PARAMETERS ##
     bounds_per_metabolite  = [3,3,5,15,3]
     for error_sigma in [.2]:
-        for n_metabolites in [6,10,20,40,60]:
+        for n_metabolites in [4,60,10,20,40]:
             print('error sigma  ',error_sigma)
             print('n_metabolites',n_metabolites)
-            n_replicates        = 2
+            n_replicates        = 100
             n_timepoints        = len(timepoints)
             n_known_metabolites = 4
-            n_cpu               = 128
+            n_cpu               = 200
             n_mc_replicates     = 100
             loss_name           = 'max_cauchy_loss'
             # calculate lambda
@@ -206,7 +206,7 @@ if __name__ == "__main__":
                 
             # pickle results
             to_pickle = [results_time,results_sv,results_model,raw_values]
-            with open(f'test_sim_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
+            with open(f'simulation_results/v1_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
                     pickle.dump(to_pickle,file)
 
     print('done')
