@@ -112,10 +112,10 @@ if __name__ == "__main__":
     ## BEGIN INPUT PARAMETERS ##
     bounds_per_metabolite  = [3,3,5,15,3]
     for error_sigma in [.2]:
-        for n_metabolites in [6,60,10,20,40]:
+        for n_metabolites in [4,60,10,20,40]:
             print('error sigma  ',error_sigma)
             print('n_metabolites',n_metabolites)
-            n_replicates        = 2
+            n_replicates        = 100
             n_timepoints        = len(timepoints)
             n_known_metabolites = 4
             n_cpu               = 200

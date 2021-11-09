@@ -144,6 +144,10 @@ if __name__ == "__main__":
                 c_tensor = sdg.generate_random_kinetic_data(n_known_metabolites,n_metabolites,toy_parameters,timepoints,bounds_per_metabolite)
                 # calculate M_tilde
                 m_tensor     = c_tensor * sv_tensor * e_tensor
+                # scaling can be done for a faster convergence. Since over all time points is the same this does not affect normalization.
+                if n_metabolites != n_known_metabolites:
+                    for i in range(4,n_metabolites):
+                        m_tensor[i] = m_tensor[i]/np.max(m_tensor[i])
                 
                 ## CREATE BOUNDS FOR THE MODEL
                 # full model
