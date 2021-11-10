@@ -135,6 +135,8 @@ def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parame
     '''
     
     n_timepoints = len(timepoints)
+    mean_distribution = ss.lognorm(s=2.360,loc=0.0478,scale=4.898)
+    std_distribution  = ss.lognorm(s=2.401,loc=0.0261,scale=3.662)
     # sample random values - no kinetics
     random_c = []
     for i in range(n_metabolites-n_known_metabolites):
@@ -142,12 +144,12 @@ def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parame
         while tmp_mean <= 0:
             # sampling from a distribution that describes the 
             # means of all features in the finger sweat data set
-            tmp_mean = np.random.pareto(0.32503106)
+            tmp_mean = mean_distribution.rvs()
         tmp_std = 0
         while tmp_std <= 0:
             # sampling from a distribution that describes the 
             # standard deviation of all features in the finger sweat data set
-            tmp_std  = np.random.lognormal(-0.35532911,  0.51296446)
+            tmp_std  = std_distribution.rvs()
         # scaling mu and s to their correspoing versions for the np.random.lognormal function
         mu  = 1
         s   = tmp_std
