@@ -1,5 +1,6 @@
 import numpy as np
 import extended_model as em
+import scipy.stats as ss
 # set seed of rng
 np.random.seed(13)
 
@@ -15,15 +16,13 @@ def sample_sweat_volumes(nr):
     sampels   List of sampled sweat volumes
     '''
     
-    mean= 0.10199112
-    std = 0.82851664
+    sv_distribution = ss.lognorm(s=0.495,loc=-0.510,scale=1.749)
     # sample new values
     samples = []
     for i in range(nr):
         sample = np.zeros(1)
         while sample < 0.05 or sample > 4:
-            sample = np.random.normal(mean,std)
-            sample = np.exp(sample)
+            sample = sv_distribution.rvs()
         samples.append(sample)
     return samples
 
