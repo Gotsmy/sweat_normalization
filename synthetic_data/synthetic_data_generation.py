@@ -1,8 +1,12 @@
 import numpy as np
 import extended_model as em
 import scipy.stats as ss
+import pandas as pd
+import random
+import normalization as norm
 # set seed of rng
 np.random.seed(13)
+random.seed(13)
 
 
 def sample_sweat_volumes(nr):
@@ -158,6 +162,60 @@ def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parame
         tmp_c = np.random.lognormal(mu_,s_,len(timepoints))*tmp_mean
         random_c.append(tmp_c)
     random_c_tensor = np.array(random_c)
+    
+    # reshape the toy parameters
+    toy_parameters = np.swapaxes(toy_parameters,1,0)
+    # append toy and sampled parameters
+    tot_parameters = np.hstack([toy_parameters])
+    # create time tensor for calculation of concentration time series
+    time_tensor  = np.tile(timepoints,tot_parameters.shape[1]).reshape(tot_parameters.shape[1],-1)
+    # create a parameter tensor for calculation of concentration time series
+    tot_parameter_tensor = np.repeat([tot_parameters[0::5],
+                                      tot_parameters[1::5],
+                                      tot_parameters[2::5],
+                                      tot_parameters[3::5],
+                                      tot_parameters[4::5]],
+                                     n_timepoints).reshape(-1,tot_parameters.shape[1],n_timepoints)
+    # calculate concentration time series
+    known_c_tensor = em.bateman(time_tensor,tot_parameter_tensor)
+    
+    # combine known kinetic and random number concentrations
+    if n_known_metabolites != n_metabolites:
+        c_tensor = np.vstack([known_c_tensor,random_c_tensor])
+    else:
+        c_tensor = known_c_tensor
+
+    return c_tensor
+
+def generate_random_from_real_data(n_known_metabolites,n_metabolites,toy_parameters,timepoints,bounds_per_metabolite):
+    '''
+    Samples a concentration time series from PQ normalized real finger sweat data. The
+    sampled concentration time series are then concatenated to the toy model concentration time series.
+    -
+    Input
+    n_known_metabolites    Int. Number of metabolites in the toy model, in this study 4.
+    n_metabolites          Int. Total number of metabolites for which measured data needs to be generated.
+    toy_parameters         Numpy.ndarray of shape (5, n_known_parameters) with parameters of basic toy model.
+    timepoints             Numpy.ndarray of shape (n_timepoints) of time points.
+    bounds_per_metabolite  Numpy.ndarray of shape (5) of upper bounds of kinetic constants for one metabolite.
+                           Kinetic parameters are sampled between 0 and bounds_per_metabolite for n_metabolites
+                           - n_known_metabolites.
+    - 
+    Output
+    c_tensor               Numpy.ndarray of shape (n_metabolites, n_timepoints)
+    '''
+    
+    n_timepoints = len(timepoints)
+    
+    df = pd.read_csv('/home/users/mgotsmy/sweat/210000_notebooks/210706_A_train_test_set/train_data/4_with_metadata.csv',index_col=0)
+    # all donors with 20 timepoints
+    donors = ['Donor_20','Donor_21','Donor_22','Donor_23','Donor_24','Donor_25','Donor_26','Donor_27','Donor_28','Donor_29','Donor_30','Donor_31','Donor_32','Donor_34','Donor_35','Donor_36','Donor_37','Donor_38','Donor_39','Donor_40','Donor_41','Donor_42','Donor_43','Donor_44','Donor_45','Donor_46','Donor_47']
+    tmp_donor = random.choice(donors)
+    tmp = df[df['donor']==tmp_donor]
+    pqn = norm.calculate_pqn(tmp.iloc[:,9:].values.T)
+    norm_tmp = tmp.iloc[:,9:]/np.repeat([pqn],58,axis=0).T
+    sampled = norm_tmp.loc[:,random.sample(list(norm_tmp.columns),n_metabolites-n_known_metabolites)]
+    random_c_tensor = sampled.T.values
     
     # reshape the toy parameters
     toy_parameters = np.swapaxes(toy_parameters,1,0)
