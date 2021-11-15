@@ -28,7 +28,7 @@ if __name__ == "__main__":
         for n_metabolites in [4,60,10,20,40]:
             print('error sigma  ',error_sigma)
             print('n_metabolites',n_metabolites)
-            n_replicates        = 2
+            n_replicates        = 100
             n_timepoints        = len(timepoints)
             n_known_metabolites = 4
             n_cpu               = 200
