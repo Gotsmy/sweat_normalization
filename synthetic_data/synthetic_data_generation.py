@@ -132,7 +132,7 @@ def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parame
     timepoints             Numpy.ndarray of shape (n_timepoints) of time points.
     bounds_per_metabolite  Numpy.ndarray of shape (5) of upper bounds of kinetic constants for one metabolite.
                            Kinetic parameters are sampled between 0 and bounds_per_metabolite for n_metabolites
-                           - n_known_metabolites.
+                           - n_known_metabolites. NOT USED. Just present for parity issues.
     - 
     Output
     c_tensor               Numpy.ndarray of shape (n_metabolites, n_timepoints)
@@ -199,7 +199,7 @@ def generate_random_from_real_data(n_known_metabolites,n_metabolites,toy_paramet
     timepoints             Numpy.ndarray of shape (n_timepoints) of time points.
     bounds_per_metabolite  Numpy.ndarray of shape (5) of upper bounds of kinetic constants for one metabolite.
                            Kinetic parameters are sampled between 0 and bounds_per_metabolite for n_metabolites
-                           - n_known_metabolites.
+                           - n_known_metabolites. NOT USED. Just present for parity issues.
     - 
     Output
     c_tensor               Numpy.ndarray of shape (n_metabolites, n_timepoints)
