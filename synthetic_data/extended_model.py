@@ -66,7 +66,7 @@ class extended_model():
         self._has_pqn_data = False
         # optimization parameters
         self._is_optimized = False
-        self.SSE           = np.nan
+        self.loss           = np.nan
         self._loss_function= None
         
         if fun == 'bateman':
@@ -111,7 +111,9 @@ class extended_model():
     
     def set_loss_function(self,loss_name):
         '''
-        Define a Loss Function to use during self._optimize().
+        Define a Loss Function to use during self._optimize(). 
+        Attention:
+        Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().
         -
         Input
         loss_name   Str. 
@@ -125,6 +127,8 @@ class extended_model():
         elif loss_name == 'max_cauchy_loss':
             self._loss_function = self.max_cauchy_loss
         elif loss_name in ['linear', 'huber', 'soft_l1', 'cauchy', 'arctan']:
+            print('''Attention:
+        Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().''')
             self._loss_function = loss_name
         else:
             print(loss_name,'not found. Loss NOT updated.')
@@ -135,6 +139,13 @@ class extended_model():
         Returns flattened M from the Equation M = C * V_sweat.
         self.parameters IS     updated.
         self.time       IS NOT updated.
+        -
+        Input
+        time           np.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        -
+        Output
+        y              np.ndarray of calculated M values of shape (self.n_metabolites*self.n_timepoints).
         '''
         self.parameters = np.array(parameters)
         sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -146,6 +157,13 @@ class extended_model():
         Returns unflattened M from the Equation M = C * V_sweat.
         self.parameters IS     updated.
         self.time       IS NOT updated.
+        -
+        Input
+        time           np.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        -
+        Output
+        y              np.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
         '''
         self.parameters = np.array(parameters)
         sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -157,6 +175,13 @@ class extended_model():
         Returns flattened C from the Equation M = C * V_sweat.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
+        -
+        Input
+        time           np.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        -
+        Output
+        y              np.ndarray of calculated C values  of shape (self.n_metabolites*self.n_timepoints).
         '''
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
@@ -173,6 +198,13 @@ class extended_model():
         Returns unflattened C from the Equation M = C * V_sweat.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
+        -
+        Input
+        time           np.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        -
+        Output
+        y              np.ndarray of calculated C values of shape (self.n_metabolites, self.n_timepoints).
         '''
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
@@ -249,7 +281,7 @@ class extended_model():
             'measured data':[self._has_measured_data],
             'metabolite names':[self._has_metabolite_names],
             'is optimized':[self._is_optimized],
-            'optimization SSE':[self.SSE]
+            'optimization loss':[self.loss]
         }
         return pd.DataFrame(model_properties,index=['properties']).transpose()
     
@@ -263,7 +295,7 @@ class extended_model():
         seed    Seed variable for np.random.seed(seed)
         -
         Output
-        array   Numpy array of shape (len(self.paramters)+1) of parameters + SSE of fitted model.
+        array   Numpy array of shape (len(self.paramters)+1) of parameters + loss of fitted model.
         '''
         
         assert self._has_measured_data, 'No measured data parsed.'
@@ -282,8 +314,8 @@ class extended_model():
                                              loss    = self._loss_function,
                                              tr_solver = 'exact',
                                             )
-            SSE = np.sum((self.measured_data-self.fit(self.time,*parameters))**2)
-            return np.concatenate([parameters,[SSE]])
+            loss = self.loss
+            return np.concatenate([parameters,[loss]])
         except (RuntimeError) as e:
             return np.concatenate([self.lower_bounds*np.nan,[np.inf]])
             
@@ -300,7 +332,7 @@ class extended_model():
         -
         Output
         array           Numpy array of shape (len(self.paramters)+1,n_replicates) of parameters
-                        + SSE of fitted model times the number of replicates.
+                        + loss of fitted model times the number of replicates.
 
         '''
         
@@ -320,7 +352,7 @@ class extended_model():
         best_parameter = _output[np.argmin(_output[:,-1]),-r:-1]
         self.set_parameters(best_parameter)
         self._is_optimized = True
-        self.SSE = np.min(_output[:,-1])
+        self.loss = np.min(_output[:,-1])
         if type(self) == extended_mix_model:
             self.x = _output[np.argmin(_output[:,-1]),0]
         return _output
@@ -336,6 +368,7 @@ class extended_model():
         rho = np.zeros((3,len(z)))
         rho[0] = z
         rho[1] = np.ones(len(z))
+        self.loss = np.sum(np.abs(rho[0]))
         return rho
     
     def max_cauchy_loss(self,absolute_error):
@@ -351,6 +384,7 @@ class extended_model():
         t = 1 + z
         rho[1] = 1 / t
         rho[2] = -1 / t**2
+        self.loss = np.sum(np.abs(rho[0]))
         return rho
     
 # MIX model
@@ -418,6 +452,14 @@ class extended_mix_model(extended_model):
         self.parameters IS     updated.
         self.x          IS     updated.
         self.time       IS NOT updated.
+        -
+        Input
+        time           np.ndarray of time points for which M is calculated.
+        x              Float of x parameter.
+        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        -
+        Output
+        y              np.ndarray of calculated M values.
         '''
         self.parameters = np.array(parameters)
         self.x = x
@@ -432,6 +474,15 @@ class extended_mix_model(extended_model):
         Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
+        self.x          IS NOT update.
+        -
+        Input
+        time           np.ndarray of time points for which M is calculated.
+        x              Float of x parameter.
+        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        -
+        Output
+        y              np.ndarray of calculated C values.
         '''
         assert len(parameters) == len(self.parameters)
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
@@ -457,6 +508,7 @@ class extended_mix_model(extended_model):
         rho = np.zeros((3,len(z)))
         rho[0] = z
         rho[1] = np.ones(len(z))
+        self.loss = np.sum(np.abs(rho[0]))
         return rho
     
     def max_cauchy_loss(self,absolute_error):
@@ -472,4 +524,5 @@ class extended_mix_model(extended_model):
         t = 1 + z
         rho[1] = 1 / t
         rho[2] = -1 / t**2
+        self.loss = np.sum(np.abs(rho[0]))
         return rho
