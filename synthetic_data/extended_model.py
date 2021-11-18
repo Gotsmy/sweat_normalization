@@ -141,11 +141,11 @@ class extended_model():
         self.time       IS NOT updated.
         -
         Input
-        time           np.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              np.ndarray of calculated M values of shape (self.n_metabolites*self.n_timepoints).
+        y              numpy.ndarray of calculated M values of shape (self.n_metabolites*self.n_timepoints).
         '''
         self.parameters = np.array(parameters)
         sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -159,11 +159,11 @@ class extended_model():
         self.time       IS NOT updated.
         -
         Input
-        time           np.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              np.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
+        y              numpy.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
         '''
         self.parameters = np.array(parameters)
         sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -177,11 +177,11 @@ class extended_model():
         self.time       IS NOT updated.
         -
         Input
-        time           np.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              np.ndarray of calculated C values  of shape (self.n_metabolites*self.n_timepoints).
+        y              numpy.ndarray of calculated C values  of shape (self.n_metabolites*self.n_timepoints).
         '''
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
@@ -200,11 +200,11 @@ class extended_model():
         self.time       IS NOT updated.
         -
         Input
-        time           np.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              np.ndarray of calculated C values of shape (self.n_metabolites, self.n_timepoints).
+        y              numpy.ndarray of calculated C values of shape (self.n_metabolites, self.n_timepoints).
         '''
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
@@ -454,12 +454,12 @@ class extended_mix_model(extended_model):
         self.time       IS NOT updated.
         -
         Input
-        time           np.ndarray of time points for which M is calculated.
+        time           numpy.ndarray of time points for which M is calculated.
         x              Float of x parameter.
-        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              np.ndarray of calculated M values.
+        y              numpy.ndarray of calculated M values.
         '''
         self.parameters = np.array(parameters)
         self.x = x
@@ -477,12 +477,12 @@ class extended_mix_model(extended_model):
         self.x          IS NOT update.
         -
         Input
-        time           np.ndarray of time points for which M is calculated.
+        time           numpy.ndarray of time points for which M is calculated.
         x              Float of x parameter.
-        *parameters    Parameters as floats. Lists or np.ndarrays lead to errors down the line.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              np.ndarray of calculated C values.
+        y              numpy.ndarray of calculated C values.
         '''
         assert len(parameters) == len(self.parameters)
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
