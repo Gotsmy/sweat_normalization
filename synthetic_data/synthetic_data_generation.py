@@ -139,8 +139,8 @@ def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parame
     '''
     
     n_timepoints = len(timepoints)
-    mean_distribution = ss.lognorm(s=1.997,loc=0.0002,scale=0.140)
-    std_distribution  = ss.lognorm(s=2.004,loc=0.0002,scale=0.116)
+    mean_distribution = ss.lognorm(s=1.820,loc=0.000143,scale=0.0875)
+    std_distribution  = ss.lognorm(s=1.826,loc=0.000134,scale=0.0753)
     # sample random values - no kinetics
     random_c = []
     for i in range(n_metabolites-n_known_metabolites):
@@ -207,7 +207,7 @@ def generate_random_from_real_data(n_known_metabolites,n_metabolites,toy_paramet
     
     n_timepoints = len(timepoints)
     
-    df = pd.read_csv('/home/users/mgotsmy/sweat/210000_notebooks/211118_untargeted_finger_sweat_data/5_imputed_with_sv.csv',index_col=0)
+    df = pd.read_csv('raw_data/imputed_untargeted.csv',index_col=0)
     # all donors with 20 timepoints
     donors = ['Donor_20','Donor_21','Donor_22','Donor_27','Donor_28','Donor_29','Donor_30','Donor_31','Donor_32','Donor_34','Donor_35','Donor_36','Donor_37','Donor_38','Donor_39','Donor_40','Donor_41','Donor_42','Donor_43','Donor_44','Donor_45','Donor_46','Donor_47']
     replicates = [1,2]
