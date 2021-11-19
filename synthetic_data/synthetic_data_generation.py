@@ -207,7 +207,7 @@ def generate_random_from_real_data(n_known_metabolites,n_metabolites,toy_paramet
     
     n_timepoints = len(timepoints)
     
-    df = pd.read_csv('raw_data/imputed_untargeted.csv',index_col=0)
+    df = pd.read_csv('../real_data/raw_data/imputed_untargeted.csv',index_col=0)
     # all donors with 20 timepoints
     donors = ['Donor_20','Donor_21','Donor_22','Donor_27','Donor_28','Donor_29','Donor_30','Donor_31','Donor_32','Donor_34','Donor_35','Donor_36','Donor_37','Donor_38','Donor_39','Donor_40','Donor_41','Donor_42','Donor_43','Donor_44','Donor_45','Donor_46','Donor_47']
     replicates = [1,2]
