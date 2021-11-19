@@ -469,6 +469,25 @@ class extended_mix_model(extended_model):
         y  = np.concatenate([y1.flatten('F'),sweat_volumes*x])
         return y
     
+    def fit_tensor(self,time,x,*parameters):
+        '''
+        Returns unflattened M from the Equation M = C * V_sweat.
+        self.parameters IS     updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           numpy.ndarray of time points for which M is calculated.
+        x              Float of x parameter.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
+        -
+        Output
+        y              numpy.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
+        '''
+        self.parameters = np.array(parameters)
+        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
+        return y
+    
     def plot(self,time,x,*parameters):
         '''
         Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
