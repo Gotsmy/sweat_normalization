@@ -473,6 +473,7 @@ class extended_mix_model(extended_model):
         '''
         Returns unflattened M from the Equation M = C * V_sweat.
         self.parameters IS     updated.
+        self.x          IS     updated.
         self.time       IS NOT updated.
         -
         Input
@@ -483,10 +484,11 @@ class extended_mix_model(extended_model):
         Output
         y              numpy.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
         '''
-        self.parameters = np.array(parameters)
-        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
-        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
-        return y
+#         self.parameters = np.array(parameters)
+#         sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+#         y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
+        raise NotImplementedError
+        return 
     
     def plot(self,time,x,*parameters):
         '''
@@ -514,6 +516,35 @@ class extended_mix_model(extended_model):
         y  = np.concatenate([y1.flatten('F'),y2*x])
         self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
+        return y
+    
+    def plot_tensor(self,time,x,*parameters):
+        '''
+        Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        self.x          IS NOT update.
+        -
+        Input
+        time           numpy.ndarray of time points for which M is calculated.
+        x              Float of x parameter.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
+        -
+        Output
+        y              numpy.ndarray of calculated C values.
+        '''
+#         assert len(parameters) == len(self.parameters)
+#         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+#         tmp_n_timepoints = self.n_timepoints
+#         tmp_parameters = self.parameters
+#         self.n_timepoints=len(time)
+#         self.parameters = np.array(parameters)
+#         y1 = self._fun(time_tensor,self._get_tensor_parameters())
+#         y2 = self.get_sweat_volumes()
+#         y  = np.concatenate([y1.flatten('F'),y2*x])
+#         self.n_timepoints=tmp_n_timepoints
+#         self.parameters = tmp_parameters
+        raise NotImplementedError
         return y
     
     def max_linear_loss(self,absolute_error):
