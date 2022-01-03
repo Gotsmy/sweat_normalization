@@ -1,6 +1,12 @@
-# A Mixed Model for Size Effect Normalization in Biofluid Concentration Time Series Measurements
+# The Best of Two Worlds: Combining Targeted and Untargeted Analysis Methods Improve Size Effect Normalization in Time Series Measurements
 
 Creation and comparison of models for finger sweat normalization.
+
+## Prerequisites
+Python 3.7 and packages listed in requirements.txt.
+```
+pip install -r requirements.txt
+```
 
 ## Synthetic Data Simulations
 Classes of EM and MIX model are located in ```synthetic_data/extended_model.py```.
