@@ -1,4 +1,4 @@
-# The Best of Two Worlds: Combining Targeted and Untargeted Analysis Methods Improve Size Effect Normalization in Time Series Measurements
+# Probabilistic quotient's work \& pharmacokinetics' contribution: countering size effect in metabolic time series measurements
 
 Creation and comparison of models for finger sweat normalization.
 
