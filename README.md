@@ -1,6 +1,6 @@
 # Probabilistic quotient's work \& pharmacokinetics' contribution: countering size effect in metabolic time series measurements
 
-Creation and comparison of models for finger sweat normalization.
+Creation and comparison of models for finger sweat normalization. A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.476591](https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg)](https://doi.org/10.1101/2022.01.17.476591).
 
 ## Prerequisites
 Python 3.7 and packages listed in requirements.txt.
