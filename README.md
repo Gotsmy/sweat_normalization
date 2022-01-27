@@ -18,8 +18,6 @@ To test a (shortened) simulation run you can execute ```synthetic_data/run_simul
 
 Results of the simulations are located in ```synthetic_data/simulation_results/*```.
 
-A Jupyter Notebook that replicates Figures used in the manuscript is located at ```synthetic_data/Simulation_Analysis.ipynb```.
-
 ## Real Finger Sweat Data Simulations
 
 Jupyter Notebooks that run real data simulations are located at ```real_data/EM_Sub_2.ipynb``` and ```real_data/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
