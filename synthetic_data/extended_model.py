@@ -119,13 +119,15 @@ class extended_model():
         loss_name   Str. 
                     Default: None            (not implemented)
                     Options: 
-                             Custom:    max_linear_loss, max_cauchy_loss
+                             Custom:    max_linear_loss, max_cauchy_loss, cauchy_loss
                              Built_in:  linear, huber, soft_l1, cauchy, arctan
         '''
         if loss_name == 'max_linear_loss':
             self._loss_function = self.max_linear_loss
         elif loss_name == 'max_cauchy_loss':
             self._loss_function = self.max_cauchy_loss
+        elif loss_name == 'cauchy_loss':
+            self._loss_function = self.cauchy_loss
         elif loss_name in ['linear', 'huber', 'soft_l1', 'cauchy', 'arctan']:
             print('''Attention:
         Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().''')
@@ -379,6 +381,19 @@ class extended_model():
         relative_error = np.divide(absolute_error, y, out=absolute_error.copy(), where=y!=0)
         # maximum error
         z = np.maximum(absolute_error,relative_error)
+        rho = np.empty((3,len(z)))
+        rho[0] = np.log1p(z)
+        t = 1 + z
+        rho[1] = 1 / t
+        rho[2] = -1 / t**2
+        self.loss = np.sum(np.abs(rho[0]))
+        return rho
+    
+    def cauchy_loss(self,absolute_error):
+        '''
+        Takes array of absolute error. Cauchy loss as implemented in SciPy is calculated.
+        '''
+        z = absolute_error
         rho = np.empty((3,len(z)))
         rho[0] = np.log1p(z)
         t = 1 + z
