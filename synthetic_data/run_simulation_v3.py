@@ -33,7 +33,7 @@ if __name__ == "__main__":
             n_known_metabolites = 4
             n_cpu               = 60
             n_mc_replicates     = 100
-            loss_name           = 'cauchy_loss'
+            loss_name           = 'max_cauchy_loss'
             # calculate lambda
             lambda_             = 1/(n_metabolites+1)
     ## END INPUT PARAMETERS ##
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
             # pickle results
             to_pickle = [results_time,results_sv,results_model,raw_values]
-            with open(f'simulation_results_abs/v3_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
+            with open(f'simulation_results/v3_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
                     pickle.dump(to_pickle,file)
 
     print('done')
