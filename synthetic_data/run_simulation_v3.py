@@ -31,20 +31,18 @@ if __name__ == "__main__":
             n_replicates        = 100
             n_timepoints        = len(timepoints)
             n_known_metabolites = 4
-            n_cpu               = 60
+            n_cpu               = 40
             n_mc_replicates     = 100
             loss_name           = 'max_cauchy_loss'
-            # calculate lambda
-            lambda_             = 1/(n_metabolites+1)
     ## END INPUT PARAMETERS ##
 
             # sample sv and e
             sv_t_list, sv_v_list = sdg.generate_sweat_volumes(n_replicates,n_metabolites,n_timepoints)
             e_list               = sdg.generate_experimental_errors(n_replicates,n_metabolites,n_timepoints,error_sigma)
             
-            results_time  = {'PQN':[],'EM_full':[],'EM_mini':[],'MIX_full':[],'MIX_mini':[]}
-            results_sv    = {'PQN':[],'EM_full':[],'EM_mini':[],'MIX_full':[],'MIX_mini':[],'TRUE':[]}
-            results_model = {'EM_full':[],'EM_mini':[],'MIX_full':[],'MIX_mini':[]}
+            results_time  = {'PQN':[],'PKM_full':[],'PKM_mini':[],'MIX_full':[],'MIX_mini':[]}
+            results_sv    = {'PQN':[],'PKM_full':[],'PKM_mini':[],'MIX_full':[],'MIX_mini':[],'TRUE':[]}
+            results_model = {'PKM_full':[],'PKM_mini':[],'MIX_full':[],'MIX_mini':[]}
             raw_values    = {'C':[],'SV':[],'M':[]}
             for n_replicate in range(n_replicates):
                 print('n_replicate',n_replicate)
@@ -61,7 +59,7 @@ if __name__ == "__main__":
                 if n_metabolites != n_known_metabolites:
                     for i in range(4,n_metabolites):
                         m_tensor[i] = m_tensor[i]/np.max(m_tensor[i])
-                
+                        
                 ## CREATE BOUNDS FOR THE MODEL
                 # full model
                 full_lb = np.concatenate((np.zeros(5*n_metabolites),np.ones(n_timepoints)*.05))
@@ -82,45 +80,47 @@ if __name__ == "__main__":
                 t1 = time.time()
                 sv_pqn                      = norm.calculate_pqn(m_tensor)
                 t2 = time.time()
-                sv_em_full, em_full_model   = norm.calculate_em(m_tensor,
+                sv_pkm_full, pkm_full_model = norm.calculate_pkm(m_tensor,
                                                            full_lb,full_ub,timepoints,n_metabolites,
-                                                           n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                           n_cpu,n_mc_replicates,loss_name)
                 t3 = time.time()
+                sv_pqn                      = norm.calculate_pqn(m_tensor)
                 sv_mix_full, mix_full_model = norm.calculate_mix(m_tensor,sv_pqn,
                                                             full_lb,full_ub,timepoints,n_metabolites,
-                                                            n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                            n_cpu,n_mc_replicates,loss_name)
                 t4 = time.time()
-                sv_em_mini, em_mini_model   = norm.calculate_em(m_tensor[:4,:],
+                sv_pkm_mini, pkm_mini_model = norm.calculate_pkm(m_tensor[:4,:],
                                                            mini_lb,mini_ub,timepoints,n_known_metabolites,
-                                                           n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                           n_cpu,n_mc_replicates,loss_name)
                 t5 = time.time()
+                sv_pqn                      = norm.calculate_pqn(m_tensor)
                 sv_mix_mini, mix_mini_model = norm.calculate_mix(m_tensor[:4,:],sv_pqn,
                                                             mini_lb,mini_ub,timepoints,n_known_metabolites,
-                                                            n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                            n_cpu,n_mc_replicates,loss_name)
                 t6 = time.time()
                 
                 results_time['PQN'].append(t2-t1)
-                results_time['EM_full'].append(t3-t2)
+                results_time['PKM_full'].append(t3-t2)
                 results_time['MIX_full'].append(t4-t3)
-                results_time['EM_mini'].append(t5-t4)
+                results_time['PKM_mini'].append(t5-t4)
                 results_time['MIX_mini'].append(t6-t5)
                 
                 results_sv['PQN'].append(sv_pqn)
-                results_sv['EM_full'].append(sv_em_full)
+                results_sv['PKM_full'].append(sv_pkm_full)
                 results_sv['MIX_full'].append(sv_mix_full)
-                results_sv['EM_mini'].append(sv_em_mini)
+                results_sv['PKM_mini'].append(sv_pkm_mini)
                 results_sv['MIX_mini'].append(sv_mix_mini)
                 results_sv['TRUE'].append(sv_vector)
                 
-                results_model['EM_full'].append(em_full_model)
+                results_model['PKM_full'].append(pkm_full_model)
                 results_model['MIX_full'].append(mix_full_model)
-                results_model['EM_mini'].append(em_mini_model)
+                results_model['PKM_mini'].append(pkm_mini_model)
                 results_model['MIX_mini'].append(mix_mini_model)
             
                 raw_values['C'].append(c_tensor)
                 raw_values['SV'].append(sv_vector)
                 raw_values['M'].append(m_tensor)
-
+                
             # pickle results
             to_pickle = [results_time,results_sv,results_model,raw_values]
             with open(f'simulation_results/v3_e_{error_sigma}_n_{n_metabolites}.pkl','wb') as file:
