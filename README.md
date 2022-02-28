@@ -24,11 +24,10 @@ Results of test simulation is located in ```synthetic_data/example_simulation.pk
 An investigation on the performance of PQN on noisy data is located in ```synthetic_data/Noisy_PQN.ipynb```.
 Results of the simulation performed there is stored in ```synthetic_data/noisy_pqn.pkl```.
 
-
 ## Real Finger Sweat Data Simulations
 
-Jupyter Notebooks that run real data simulations are located at ```real_data/EM_Sub_2.ipynb``` and ```real_data/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
-The results of these simuations are located in ```real_data/EM_sub_2/*```, ```real_data/MIX_sub_2_n_EM```, and ```real_data/MIX_sub_2_n_PQN/*``` for PKM_mininimal, equal weighting MIX_minimal, and metabolite-wise weighted MIX_minimal respectively.
+Jupyter Notebooks that run real data simulations are located at ```real_data/PKM_Sub_2.ipynb``` and ```real_data/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
+The results of these simuations are located in ```real_data/PKM_sub_2/*``` and ```real_data/MIX_sub_2``` for PKM_mininimal and MIX_minimal respectively.
 
 ##  Figures from the Manuscript
 A Jupyter Notebook that replicates Figures used in the manuscript is located in the base (```Figures.ipynb```).
