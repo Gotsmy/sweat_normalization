@@ -35,8 +35,36 @@ def fun_1(time,p):
     y = np.clip(y,a_min=0,a_max=np.inf)+p[3]
     return y
 
+def standard_scale(array):
+    '''
+    Standard scales (Z-transforms) an array. I.e. scales an array to a mean of 0 and a standard deviation of 1.
+    -
+    Input
+    array    numpy.ndarray.
+    -
+    Output
+    z        Scaled numpy.ndarray.
+    '''
+    
+    z = (array-np.mean(array))/np.std(array)
+    return z
+
+def mean_scale(array):
+    '''
+    Mean scales (Z-transforms) an array. I.e. scales an array to a mean of 1.
+    -
+    Input
+    array    numpy.ndarray.
+    -
+    Output
+    m        Scaled numpy.ndarray.
+    '''
+    
+    m = array/np.mean(array)
+    return m
+
 # EM model
-class extended_model():
+class PKM_model():
     '''
     Builds a kinetic model for an arbitrary number of metabolites with the kinetic 
     function defined in self._fun.
@@ -52,7 +80,7 @@ class extended_model():
         fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
         -
         Output
-        extended_model class
+        PKM_model class
         '''
         self.time          = time
         self.n_metabolites = n_metabolites
@@ -355,8 +383,6 @@ class extended_model():
         self.set_parameters(best_parameter)
         self._is_optimized = True
         self.loss = np.min(_output[:,-1])
-        if type(self) == extended_mix_model:
-            self.x = _output[np.argmin(_output[:,-1]),0]
         return _output
     
     def max_linear_loss(self,absolute_error):
@@ -403,8 +429,8 @@ class extended_model():
         return rho
     
 # MIX model
-class extended_mix_model(extended_model):
-    def __init__(self,time,n_metabolites,fun='bateman'):
+class MIX_model(PKM_model):
+    def __init__(self,time,n_metabolites,fun='bateman',scaler='standard'):
         '''
         Initialization.
         -
@@ -412,31 +438,20 @@ class extended_mix_model(extended_model):
         time             numpy.ndarray of time points of measurements.
         n_metabolites    int. number of metabolites measured.
         fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
+        scaler           callable or str 'standard'/'mean'. Function that scales PQN.
         -
         Output
-        extended_model class
+        MIX_model class
         '''
         
         super().__init__(time,n_metabolites,fun='bateman')
         self.sigma = np.ones((self.n_metabolites+1)*self.n_timepoints)
-        # self.x is the additional scaling parameter used to scale PQN normalization factors to V_sweat
-        self.x = np.nan
-        
-        
-    def set_fit_bounds(self,lower_bounds,upper_bounds):
-        '''
-        Set bounds for model optimization. They are parsed into the scipy.optmize.curve_fit function.
-        Lower bounds have to be always lower than upper bounds.
-        -
-        Input
-        lower_bounds    List or array of shape (len(self.parameters) + 1).
-        upper_bounds    List or array of shape (len(self.parameters) + 1).
-        '''
-        assert len(upper_bounds) == len(self.parameters)+1
-        self.upper_bounds = np.array(upper_bounds)
-        assert len(lower_bounds) == len(self.parameters)+1
-        self.lower_bounds = np.array(lower_bounds)
-        self._has_bounds = True
+        if scaler == 'standard':
+            self.scaler = standard_scale
+        elif scaler == 'mean':
+            self.scaler = mean_scale
+        else:
+            self.scaler = scaler
         
     def set_measured_data(self,measured_data,pqn_data):
         '''
@@ -447,53 +462,37 @@ class extended_mix_model(extended_model):
         measured_data    Flattened array of measured data of shape (self.n_timepoints * self.n_metabolites).
         '''
         assert len(np.concatenate([measured_data,pqn_data])) == (self.n_metabolites+1)*self.n_timepoints
-        self.measured_data = np.concatenate([measured_data,pqn_data])
+        self.measured_data = np.concatenate([measured_data,self.scaler(pqn_data)])
         self._has_measured_data = True
         
-    def set_sigma(self,sigma):
-        '''
-        Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
-        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
-        - 
-        Input
-        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
-        '''
-        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1)
-        self.sigma = sigma
-        
-    def fit(self,time,x,*parameters):
+    def fit(self,time,*parameters):
         '''
         Returns flattened M from the Equation M = C * V_sweat concatenated to the sweat volume array.
         self.parameters IS     updated.
-        self.x          IS     updated.
         self.time       IS NOT updated.
         -
         Input
         time           numpy.ndarray of time points for which M is calculated.
-        x              Float of x parameter.
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
         y              numpy.ndarray of calculated M values.
         '''
         self.parameters = np.array(parameters)
-        self.x = x
         sweat_volumes = self.get_sweat_volumes()
         sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
         y1 = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
-        y  = np.concatenate([y1.flatten('F'),sweat_volumes*x])
+        y  = np.concatenate([y1.flatten('F'),self.scaler(sweat_volumes)])
         return y
     
-    def fit_tensor(self,time,x,*parameters):
+    def fit_tensor(self,time,*parameters):
         '''
         Returns unflattened M from the Equation M = C * V_sweat.
         self.parameters IS     updated.
-        self.x          IS     updated.
         self.time       IS NOT updated.
         -
         Input
         time           numpy.ndarray of time points for which M is calculated.
-        x              Float of x parameter.
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
@@ -505,16 +504,14 @@ class extended_mix_model(extended_model):
         raise NotImplementedError
         return 
     
-    def plot(self,time,x,*parameters):
+    def plot(self,time,*parameters):
         '''
         Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
-        self.x          IS NOT update.
         -
         Input
         time           numpy.ndarray of time points for which M is calculated.
-        x              Float of x parameter.
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
@@ -528,21 +525,19 @@ class extended_mix_model(extended_model):
         self.parameters = np.array(parameters)
         y1 = self._fun(time_tensor,self._get_tensor_parameters())
         y2 = self.get_sweat_volumes()
-        y  = np.concatenate([y1.flatten('F'),y2*x])
+        y  = np.concatenate([y1.flatten('F'),y2])
         self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
         return y
     
-    def plot_tensor(self,time,x,*parameters):
+    def plot_tensor(self,time,*parameters):
         '''
         Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
-        self.x          IS NOT update.
         -
         Input
         time           numpy.ndarray of time points for which M is calculated.
-        x              Float of x parameter.
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
@@ -566,7 +561,15 @@ class extended_mix_model(extended_model):
         '''
         Takes array of absolute error, calculates relative error. From the maximum of both Linear loss as implemented in SciPy is calculated.
         '''
-        y = self.fit(self.time,self.x,*self.parameters)
+        # back-scale scaled PQN error
+        if self.scaler == standard_scale:
+            absolute_error[4::5] = absolute_error[4::5]*np.std(self.get_sweat_volumes())**2
+        elif self.scaler == mean_scale:
+            pass
+        else:
+            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma.')
+        # get true values
+        y = self.plot(self.time,*self.parameters)
         relative_error = np.divide(absolute_error, y, out=absolute_error.copy(), where=y!=0)
         # maximum error
         z = np.maximum(absolute_error,relative_error)
@@ -580,7 +583,15 @@ class extended_mix_model(extended_model):
         '''
         Takes array of absolute error, calculates relative error. From the maximum of both Cauchy loss as implemented in SciPy is calculated.
         '''
-        y = self.fit(self.time,self.x,*self.parameters)
+        # back-scale scaled PQN error
+        if self.scaler == standard_scale:
+            absolute_error[4::5] = absolute_error[4::5]*np.std(self.get_sweat_volumes())**2
+        elif self.scaler == mean_scale:
+            pass
+        else:
+            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma.')
+        # get true values
+        y = self.plot(self.time,*self.parameters)
         relative_error = np.divide(absolute_error, y, out=absolute_error.copy(), where=y!=0)
         # maximum error
         z = np.maximum(absolute_error,relative_error)
@@ -591,3 +602,14 @@ class extended_mix_model(extended_model):
         rho[2] = -1 / t**2
         self.loss = np.sum(np.abs(rho[0]))
         return rho
+    
+    def set_sigma(self,sigma):
+        '''
+        Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
+        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
+        - 
+        Input
+        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
+        '''
+        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1)
+        self.sigma = sigma

@@ -18,9 +18,9 @@ def calculate_pqn(m_tensor):
     pqn = np.median(div,axis=0)
     return pqn
 
-def calculate_em(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,lambda_):
+def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,lambda_):
     '''
-    Calculate normalization factor according to an EM model.
+    Calculate normalization factor according to an PKM model.
     -
     m_tensor         numpy.ndarray of shape (n_metabolites * n_timepoints) of measured data.
     lb               numpy.ndarray of shape (n_metabolites * 5 + n_timepoints) of lower bounds of parameters for model fitting.
@@ -34,11 +34,11 @@ def calculate_em(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss
     -
     Output:
     sweat_volumes    numpy.ndarray of shape (n_timepoints) with normalization factors.
-    model            Optimized em.extended_model.
+    model            Optimized em.PKM_model.
     '''
     
     # creating model and setting properties
-    model = em.extended_model(timepoints,n_metabolites)
+    model = em.PKM_model(timepoints,n_metabolites)
     model.set_fit_bounds(lb,ub)
     model.set_measured_data(m_tensor.flatten('F'))
     model.set_loss_function(loss_name)
@@ -68,14 +68,13 @@ def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replica
     -
     Output:
     sweat_volumes    numpy.ndarray of shape (n_timepoints) with normalization factors.
-    model            Optimized em.extended_model.
+    model            Optimized em.MIX_model.
     '''
     
     # creating model and setting properties
-    model = em.extended_mix_model(timepoints,n_metabolites)
+    model = em.MIX_model(timepoints,n_metabolites,scaler='standard')
     # as the MIX model has one additional parameter the bounds have to be appended.
-    model.set_fit_bounds(np.concatenate([[.1],lb]),
-                           np.concatenate([[10],ub]))
+    model.set_fit_bounds(lb,ub)
     model.set_measured_data(m_tensor.flatten('F'),sv_pqn)
     model.set_loss_function(loss_name)
     # the weighting of error residuals for EM and PQN part of the MIX model is calculated over the sigma array parsed to the underlying scipy.optimize.curve_fit function.
