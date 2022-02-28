@@ -20,7 +20,7 @@ def sample_sweat_volumes(nr):
     sampels   List of sampled sweat volumes
     '''
     
-    sv_distribution = ss.lognorm(s=0.492,loc=-0.521,scale=1.797)
+    sv_distribution = ss.lognorm(s=0.495,loc=-0.510,scale=1.749)
     # sample new values
     samples = []
     for i in range(nr):
@@ -139,8 +139,8 @@ def generate_completely_random_data(n_known_metabolites,n_metabolites,toy_parame
     '''
     
     n_timepoints = len(timepoints)
-    mean_distribution = ss.lognorm(s=1.820,loc=0.000143,scale=0.0875)
-    std_distribution  = ss.lognorm(s=1.826,loc=0.000134,scale=0.0753)
+    mean_distribution = ss.lognorm(s=2.148,loc=0.00178,scale=1.241)
+    std_distribution  = ss.lognorm(s=2.216,loc=0.00112,scale=0.843)
     # sample random values - no kinetics
     random_c = []
     for i in range(n_metabolites-n_known_metabolites):
