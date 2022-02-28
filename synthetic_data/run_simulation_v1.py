@@ -34,8 +34,6 @@ if __name__ == "__main__":
             n_cpu               = 200
             n_mc_replicates     = 100
             loss_name           = 'max_cauchy_loss'
-            # calculate lambda
-            lambda_             = .5
     ## END INPUT PARAMETERS ##
 
             # sample sv and e
@@ -84,21 +82,21 @@ if __name__ == "__main__":
                 t2 = time.time()
                 sv_pkm_full, pkm_full_model = norm.calculate_pkm(m_tensor,
                                                            full_lb,full_ub,timepoints,n_metabolites,
-                                                           n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                           n_cpu,n_mc_replicates,loss_name)
                 t3 = time.time()
                 sv_pqn                      = norm.calculate_pqn(m_tensor)
                 sv_mix_full, mix_full_model = norm.calculate_mix(m_tensor,sv_pqn,
                                                             full_lb,full_ub,timepoints,n_metabolites,
-                                                            n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                            n_cpu,n_mc_replicates,loss_name)
                 t4 = time.time()
                 sv_pkm_mini, pkm_mini_model = norm.calculate_pkm(m_tensor[:4,:],
                                                            mini_lb,mini_ub,timepoints,n_known_metabolites,
-                                                           n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                           n_cpu,n_mc_replicates,loss_name)
                 t5 = time.time()
                 sv_pqn                      = norm.calculate_pqn(m_tensor)
                 sv_mix_mini, mix_mini_model = norm.calculate_mix(m_tensor[:4,:],sv_pqn,
                                                             mini_lb,mini_ub,timepoints,n_known_metabolites,
-                                                            n_cpu,n_mc_replicates,loss_name,lambda_)
+                                                            n_cpu,n_mc_replicates,loss_name)
                 t6 = time.time()
                 
                 results_time['PQN'].append(t2-t1)
