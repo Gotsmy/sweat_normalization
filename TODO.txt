@@ -1,1 +1,3 @@
-- fit_tensor & plot_tensor functions are not functioning for extended_mix_model.
+- fit_tensor & plot_tensor functions are not implemented for extended_model.MIX_model
+- fix run_test_simulation
+- update figures.ipynb
