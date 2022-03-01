@@ -345,7 +345,8 @@ class PKM_model():
                                              tr_solver = 'exact',
                                             )
             loss = self.loss
-            return np.concatenate([parameters,[loss]])
+            rho  = self.rho
+            return rho, np.concatenate([parameters,[loss]])
         except (RuntimeError) as e:
             return np.concatenate([self.lower_bounds*np.nan,[np.inf]])
             
@@ -372,10 +373,12 @@ class PKM_model():
         _input = list(range(n_replicates))
         
         # multiprocessing 
+        _rho = []
         _output = []
         with Pool(processes = n_cpu) as p:
             for _ in tqdm.tqdm(p.imap_unordered(self._optimize,_input),total=n_replicates):
-                _output.append(_)
+                _output.append(_[1])
+                _rho.append(_[0])
         
         _output = np.array(_output)
         r = len(self.parameters)+1
@@ -383,6 +386,7 @@ class PKM_model():
         self.set_parameters(best_parameter)
         self._is_optimized = True
         self.loss = np.min(_output[:,-1])
+        self.rho = _rho[np.argmin(_output[:,-1])]
         return _output
     
     def max_linear_loss(self,absolute_error):
@@ -397,6 +401,7 @@ class PKM_model():
         rho[0] = z
         rho[1] = np.ones(len(z))
         self.loss = np.sum(np.abs(rho[0]))
+        self.rho = rho
         return rho
     
     def max_cauchy_loss(self,absolute_error):
@@ -413,6 +418,7 @@ class PKM_model():
         rho[1] = 1 / t
         rho[2] = -1 / t**2
         self.loss = np.sum(np.abs(rho[0]))
+        self.rho = rho
         return rho
     
     def cauchy_loss(self,absolute_error):
@@ -426,6 +432,7 @@ class PKM_model():
         rho[1] = 1 / t
         rho[2] = -1 / t**2
         self.loss = np.sum(np.abs(rho[0]))
+        self.rho = rho
         return rho
     
 # MIX model
@@ -580,6 +587,7 @@ class MIX_model(PKM_model):
         rho[0] = z
         rho[1] = np.ones(len(z))
         self.loss = np.sum(np.abs(rho[0]))
+        self.rho = rho
         return rho
     
     def max_cauchy_loss(self,absolute_error):
@@ -605,6 +613,7 @@ class MIX_model(PKM_model):
         rho[1] = 1 / t
         rho[2] = -1 / t**2
         self.loss = np.sum(np.abs(rho[0]))
+        self.rho = rho
         return rho
     
     def set_sigma(self,sigma):
@@ -638,4 +647,5 @@ class MIX_model(PKM_model):
         rho[1] = 1 / t
         rho[2] = -1 / t**2
         self.loss = np.sum(np.abs(rho[0]))
+        self.rho = rho
         return rho
