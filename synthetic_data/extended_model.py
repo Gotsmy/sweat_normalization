@@ -348,7 +348,7 @@ class PKM_model():
             rho  = self.rho
             return rho, np.concatenate([parameters,[loss]])
         except (RuntimeError) as e:
-            return np.concatenate([self.lower_bounds*np.nan,[np.inf]])
+            return np.zeros((3,len(self.measured_data)))*np.nan, np.concatenate([self.lower_bounds*np.nan,[np.inf]])
             
     
     def optimize_monte_carlo(self,n_replicates,n_cpu):
