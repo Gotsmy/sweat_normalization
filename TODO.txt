@@ -1,2 +1,1 @@
-- fit_tensor & plot_tensor functions are not implemented for extended_model.MIX_model
 - update figures.ipynb

@@ -478,6 +478,7 @@ class MIX_model(PKM_model):
         Output
         y              numpy.ndarray of calculated M values.
         '''
+        assert len(parameters) == len(self.parameters)
         self.parameters = np.array(parameters)
         sweat_volumes = self.get_sweat_volumes()
         sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -496,13 +497,15 @@ class MIX_model(PKM_model):
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              numpy.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
+        y              numpy.ndarray of calculated M values and scaled (!) sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
         '''
-#         self.parameters = np.array(parameters)
-#         sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
-#         y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
-        raise NotImplementedError
-        return 
+        assert len(parameters) == len(self.parameters)
+        self.parameters = np.array(parameters)
+        sweat_volumes = self.get_sweat_volumes()
+        sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y1 = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
+        y  = np.vstack([y1,self.scaler(sweat_volumes)])
+        return y
     
     def plot(self,time,*parameters):
         '''
@@ -541,20 +544,19 @@ class MIX_model(PKM_model):
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              numpy.ndarray of calculated C values.
+        y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
         '''
-#         assert len(parameters) == len(self.parameters)
-#         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
-#         tmp_n_timepoints = self.n_timepoints
-#         tmp_parameters = self.parameters
-#         self.n_timepoints=len(time)
-#         self.parameters = np.array(parameters)
-#         y1 = self._fun(time_tensor,self._get_tensor_parameters())
-#         y2 = self.get_sweat_volumes()
-#         y  = np.concatenate([y1.flatten('F'),y2*x])
-#         self.n_timepoints=tmp_n_timepoints
-#         self.parameters = tmp_parameters
-        raise NotImplementedError
+        assert len(parameters) == len(self.parameters)
+        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        tmp_n_timepoints = self.n_timepoints
+        tmp_parameters = self.parameters
+        self.n_timepoints=len(time)
+        self.parameters = np.array(parameters)
+        y1 = self._fun(time_tensor,self._get_tensor_parameters())
+        y2 = self.get_sweat_volumes()
+        y  = np.vstack([y1,y2])
+        self.n_timepoints=tmp_n_timepoints
+        self.parameters = tmp_parameters
         return y
     
     def max_linear_loss(self,absolute_error):
@@ -563,11 +565,12 @@ class MIX_model(PKM_model):
         '''
         # back-scale scaled PQN error
         if self.scaler == standard_scale:
-            absolute_error[4::5] = absolute_error[4::5]*np.std(self.get_sweat_volumes())**2
+            # because the error is the sum of squares, the factor also has to be squared
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.std(self.get_sweat_volumes())**2
         elif self.scaler == mean_scale:
             pass
         else:
-            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma.')
+            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma().')
         # get true values
         y = self.plot(self.time,*self.parameters)
         relative_error = np.divide(absolute_error, y, out=absolute_error.copy(), where=y!=0)
@@ -585,7 +588,8 @@ class MIX_model(PKM_model):
         '''
         # back-scale scaled PQN error
         if self.scaler == standard_scale:
-            absolute_error[4::5] = absolute_error[4::5]*np.std(self.get_sweat_volumes())**2
+            # because the error is the sum of squares, the factor also has to be squared
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.std(self.get_sweat_volumes())**2
         elif self.scaler == mean_scale:
             pass
         else:
@@ -613,3 +617,25 @@ class MIX_model(PKM_model):
         '''
         assert len(sigma) == self.n_timepoints*(self.n_metabolites+1)
         self.sigma = sigma
+        
+    def cauchy_loss(self,absolute_error):
+        '''
+        Takes array of absolute error. Cauchy loss as implemented in SciPy is calculated.
+        '''
+        
+        # back-scale scaled PQN error
+        if self.scaler == standard_scale:
+            # because the error is the sum of squares, the factor also has to be squared
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.std(self.get_sweat_volumes())**2
+        elif self.scaler == mean_scale:
+            pass
+        else:
+            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma.')
+        z = absolute_error
+        rho = np.empty((3,len(z)))
+        rho[0] = np.log1p(z)
+        t = 1 + z
+        rho[1] = 1 / t
+        rho[2] = -1 / t**2
+        self.loss = np.sum(np.abs(rho[0]))
+        return rho
