@@ -337,6 +337,7 @@ class PKM_model():
                                              xdata   = self.time,
                                              ydata   = self.measured_data,
                                              sigma   = self.sigma,
+                                             absolute_sigma = True,
                                              p0      = p0,
                                              bounds  = (self.lower_bounds,self.upper_bounds),
                                              method  = 'trf',
