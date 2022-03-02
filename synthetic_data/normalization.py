@@ -18,7 +18,7 @@ def calculate_pqn(m_tensor):
     pqn = np.median(div,axis=0)
     return pqn
 
-def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name):
+def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,lambda_):
     '''
     Calculate normalization factor according to an PKM model.
     -
@@ -30,6 +30,7 @@ def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,los
     n_cpu            Int. Number of CPUs used in multiprocessing.
     n_replicates     Int. Number of Monte Carlo replicates used for optimization.
     loss_name        Str. Loss used for optimization.
+    lambda_          Float. Weighting value for loss calculation.
     -
     Output:
     sweat_volumes    numpy.ndarray of shape (n_timepoints) with normalization factors.
@@ -41,13 +42,16 @@ def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,los
     model.set_fit_bounds(lb,ub)
     model.set_measured_data(m_tensor.flatten('F'))
     model.set_loss_function(loss_name)
+    # the weighting of error residuals is calculated over the sigma array parsed to the underlying scipy.optimize.curve_fit function.
+    sigma_pkm = 1/lambda_
+    model.set_sigma(np.ones(model.n_timepoints*model.n_metabolites)*sigma_pkm)
     # optimization of the model
     # out is a nd.array of shape ((n_parameters + 1) * n_replicates) with optimized parameters + loss value for every MC replicate.
     # as we are only interested in the best solution out is not used further.
     out = model.optimize_monte_carlo(n_replicates=n_replicates,n_cpu=n_cpu)
     return model.get_sweat_volumes(), model
 
-def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name):
+def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,lambda_):
     '''
     Calculate normalization factor according to a MIX model.
     -
@@ -60,6 +64,7 @@ def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replica
     n_cpu            Int. Number of CPUs used in multiprocessing.
     n_replicates     Int. Number of Monte Carlo replicates used for optimization.
     loss_name        Str. Loss used for optimization.
+    lambda_          Float. Weighting value for loss calculation.
     -
     Output:
     sweat_volumes    numpy.ndarray of shape (n_timepoints) with normalization factors.
@@ -72,6 +77,10 @@ def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replica
     model.set_fit_bounds(lb,ub)
     model.set_measured_data(m_tensor.flatten('F'),sv_pqn)
     model.set_loss_function(loss_name)
+    # the weighting of error residuals for EM and PQN part of the MIX model is calculated over the sigma array parsed to the underlying scipy.optimize.curve_fit function.
+    sigma_pkm = 1/lambda_
+    sigma_pqn= 1/(1-lambda_)
+    model.set_sigma(np.append(np.ones(model.n_timepoints*model.n_metabolites)*sigma_pkm,np.ones(model.n_timepoints)*sigma_pqn))
     # optimization of the model
     # out is a nd.array of shape ((n_parameters + 1) * n_replicates) with optimized parameters + loss value for every MC replicate.
     # as we are only interested in the best solution out is not used further.
