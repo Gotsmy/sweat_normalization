@@ -597,7 +597,7 @@ class MIX_model(PKM_model):
         # back-scale scaled PQN error
         if self.scaler == standard_scale:
             # because the error is the sum of squares, the factor also has to be squared
-            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.std(self.get_sweat_volumes())**2
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.var(self.get_sweat_volumes())
         elif self.scaler == mean_scale:
             pass
         else:
