@@ -122,7 +122,7 @@ class PKM_model():
     
     def set_parameters(self,parameters):
         '''Updates the parameter values of the model.'''
-        assert len(parameters) == self.n_metabolites*self._fun_parameter_number+self.n_timepoints, 'Shape of parameters is incorrect. {} should be {}..'.format(len(parameters),self.n_metabolites*self._fun_parameter_number+len(self.time))
+        assert len(parameters) == self.n_metabolites*self._fun_parameter_number+self.n_timepoints, 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),self.n_metabolites*self._fun_parameter_number+len(self.time))
         self.parameters = parameters
         
     def _get_tensor_parameters_5(self):
@@ -253,7 +253,7 @@ class PKM_model():
         Input
         metabolite_names    List or numpy.ndarray of shape (self.n_metabolites).
         '''
-        assert len(metabolite_names) == self.n_metabolites
+        assert len(metabolite_names) == self.n_metabolites, 'Shape of metabolite_names is incorrect ({} should be {}).'.format(len(metabolite_names),self.n_metabolites)
         self.metabolite_names = metabolite_names
         self._has_metabolite_names = True
         
@@ -266,9 +266,9 @@ class PKM_model():
         lower_bounds    List or array of shape (len(self.parameters)).
         upper_bounds    List or array of shape (len(self.parameters)).
         '''
-        assert len(upper_bounds) == len(self.parameters)
+        assert len(upper_bounds) == len(self.parameters), 'Shape of upper_bounds is incorrect ({} should be {}).'.format(len(upper_bounds),len(self.parameters))
         self.upper_bounds = np.array(upper_bounds)
-        assert len(lower_bounds) == len(self.parameters)
+        assert len(lower_bounds) == len(self.parameters), 'Shape of lower_bounds is incorrect ({} should be {}).'.format(len(lower_bounds),len(self.parameters))
         self.lower_bounds = np.array(lower_bounds)
         self._has_bounds = True
         
@@ -280,7 +280,7 @@ class PKM_model():
         Input
         sigma    List or array of shape (self.n_timepoints * self.n_metabolites).
         '''
-        assert len(sigma) == self.n_timepoints*self.n_metabolites
+        assert len(sigma) == self.n_timepoints*self.n_metabolites, 'Shape of sigma is incorrect ({} should be {}).'.format(len(sigma),self.n_timepoints*self.n_metabolites)
         self.sigma = np.array(sigma)
         
     def set_measured_data(self,measured_data):
@@ -291,7 +291,7 @@ class PKM_model():
         Input
         measured_data    Flattened array of measured data of shape (self.n_timepoints * self.n_metabolites).
         '''
-        assert len(measured_data) == self.n_metabolites*self.n_timepoints
+        assert len(measured_data) == self.n_metabolites*self.n_timepoints, 'Shape of measured_data is incorrect ({} should be {}).'.format(len(measured_data),self.n_metabolites*self.n_timepoints)
         self.measured_data = measured_data
         self._has_measured_data = True
         
@@ -469,7 +469,8 @@ class MIX_model(PKM_model):
         Input
         measured_data    Flattened array of measured data of shape (self.n_timepoints * self.n_metabolites).
         '''
-        assert len(np.concatenate([measured_data,pqn_data])) == (self.n_metabolites+1)*self.n_timepoints
+        assert len(measured_data) == self.n_metabolites*self.n_timepoints, 'Shape of measured_data is incorrect ({} should be {}).'.format(len(measured_data),self.n_metabolites*self.n_timepoints)
+        assert len(pqn_data) == len(self.n_timepoints), 'Shape of pqn_data is incorrect ({} should be {}).'.format(len(pqn_data),self.n_timepoints)
         self.measured_data = np.concatenate([measured_data,self.scaler(pqn_data)])
         self._has_measured_data = True
         
@@ -486,7 +487,7 @@ class MIX_model(PKM_model):
         Output
         y              numpy.ndarray of calculated M values.
         '''
-        assert len(parameters) == len(self.parameters)
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
         self.parameters = np.array(parameters)
         sweat_volumes = self.get_sweat_volumes()
         sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -507,7 +508,7 @@ class MIX_model(PKM_model):
         Output
         y              numpy.ndarray of calculated M values and scaled (!) sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
         '''
-        assert len(parameters) == len(self.parameters)
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
         self.parameters = np.array(parameters)
         sweat_volumes = self.get_sweat_volumes()
         sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
@@ -528,7 +529,7 @@ class MIX_model(PKM_model):
         Output
         y              numpy.ndarray of calculated C values.
         '''
-        assert len(parameters) == len(self.parameters)
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
@@ -554,7 +555,7 @@ class MIX_model(PKM_model):
         Output
         y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
         '''
-        assert len(parameters) == len(self.parameters)
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
@@ -625,7 +626,7 @@ class MIX_model(PKM_model):
         Input
         sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
         '''
-        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1)
+        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1), 'Shape of sigma is incorrect ({} should be {}).'.format(len(sigma),self.n_timepoints*(self.n_metabolites+1))
         self.sigma = sigma
         
     def cauchy_loss(self,absolute_error):
