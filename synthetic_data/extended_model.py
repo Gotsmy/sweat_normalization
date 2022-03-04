@@ -470,7 +470,7 @@ class MIX_model(PKM_model):
         measured_data    Flattened array of measured data of shape (self.n_timepoints * self.n_metabolites).
         '''
         assert len(measured_data) == self.n_metabolites*self.n_timepoints, 'Shape of measured_data is incorrect ({} should be {}).'.format(len(measured_data),self.n_metabolites*self.n_timepoints)
-        assert len(pqn_data) == len(self.n_timepoints), 'Shape of pqn_data is incorrect ({} should be {}).'.format(len(pqn_data),self.n_timepoints)
+        assert len(pqn_data) == self.n_timepoints, 'Shape of pqn_data is incorrect ({} should be {}).'.format(len(pqn_data),self.n_timepoints)
         self.measured_data = np.concatenate([measured_data,self.scaler(pqn_data)])
         self._has_measured_data = True
         
