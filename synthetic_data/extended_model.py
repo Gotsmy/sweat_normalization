@@ -223,19 +223,26 @@ class PKM_model():
         self.parameters = tmp_parameters
         return y.flatten('F')
     
-    def plot_tensor(self,time,*parameters):
+    def plot_tensor(self,time=None,parameters=None):
         '''
         Returns unflattened C from the Equation M = C * V_sweat.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
         -
         Input
-        time           numpy.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
+        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
+        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
         -
         Output
-        y              numpy.ndarray of calculated C values of shape (self.n_metabolites, self.n_timepoints).
+        y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites, self.n_timepoints).
+                       Sweat volumes are NOT returned!
         '''
+        if type(time) == type(None):
+            time = self.time
+        if type(parameters) == type(None):
+            parameters = self.parameters
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
+
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
@@ -542,28 +549,31 @@ class MIX_model(PKM_model):
         self.parameters = tmp_parameters
         return y
     
-    def plot_tensor(self,time,*parameters):
+    def plot_tensor(self,time=None,parameters=None):
         '''
         Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
         -
         Input
-        time           numpy.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
+        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
+        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
         -
         Output
-        y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
+        y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites, self.n_timepoints).
+                       Sweat volumes are NOT returned!
         '''
+        if type(time) == type(None):
+            time = self.time
+        if type(parameters) == type(None):
+            parameters = self.parameters
         assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
         time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
         tmp_n_timepoints = self.n_timepoints
         tmp_parameters = self.parameters
         self.n_timepoints=len(time)
         self.parameters = np.array(parameters)
-        y1 = self._fun(time_tensor,self._get_tensor_parameters())
-        y2 = self.get_sweat_volumes()
-        y  = np.vstack([y1,y2])
+        y = self._fun(time_tensor,self._get_tensor_parameters())
         self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
         return y
