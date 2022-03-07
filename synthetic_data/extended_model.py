@@ -443,6 +443,33 @@ class PKM_model():
         self.rho = rho
         return rho
     
+    def get_C_df(self,time=None,parameters=None):
+        '''
+        Returns pandas.DataFrame with C from the Equation M = C * V_sweat.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
+        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
+        -
+        Output
+        y              pandas.DataFrame of calculated C values and sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
+                       Sweat volumes are NOT returned!
+        '''
+        if type(time) == type(None):
+            time = np.array(self.time)
+        if type(parameters) == type(None):
+            parameters = np.array(self.parameters)
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
+        assert self._has_metabolite_names
+        C_tensor = self.plot_tensor(time=time,parameters=parameters)
+        C_df = pd.DataFrame(index=np.arange(len(time)),dtype=float,columns=['time']+list(self.metabolite_names))
+        C_df.loc[:,'time'] = self.time
+        for i, metabolite in enumerate(self.metabolite_names):
+            C_df.loc[:,metabolite] = C_tensor[i,:]
+        return C_df
+    
 # MIX model
 class MIX_model(PKM_model):
     def __init__(self,time,n_metabolites,fun='bateman',scaler='standard'):
