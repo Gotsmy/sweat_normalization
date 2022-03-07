@@ -462,10 +462,10 @@ class PKM_model():
         if type(parameters) == type(None):
             parameters = np.array(self.parameters)
         assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
-        assert self._has_metabolite_names
+        assert self._has_metabolite_names, 'Model metabolite names are not set (see self.set_metabolite_names).'
         C_tensor = self.plot_tensor(time=time,parameters=parameters)
         C_df = pd.DataFrame(index=np.arange(len(time)),dtype=float,columns=['time']+list(self.metabolite_names))
-        C_df.loc[:,'time'] = self.time
+        C_df.loc[:,'time'] = time
         for i, metabolite in enumerate(self.metabolite_names):
             C_df.loc[:,metabolite] = C_tensor[i,:]
         return C_df
