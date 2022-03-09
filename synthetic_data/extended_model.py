@@ -63,6 +63,16 @@ def mean_scale(array):
     m = array/np.mean(array)
     return m
 
+def log10px(array,x=1e-8):
+    '''
+    Calculates log10 of (array+x).
+    -
+    Input
+    array    numpy.ndarray.
+    x        float. default = 1e-8.
+    '''
+    return np.log10(array+x)
+
 # EM model
 class PKM_model():
     '''
@@ -654,17 +664,6 @@ class MIX_model(PKM_model):
         self.loss = np.sum(np.abs(rho[0]))
         self.rho = rho
         return rho
-    
-    def set_sigma(self,sigma):
-        '''
-        Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
-        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
-        - 
-        Input
-        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
-        '''
-        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1), 'Shape of sigma is incorrect ({} should be {}).'.format(len(sigma),self.n_timepoints*(self.n_metabolites+1))
-        self.sigma = sigma
         
     def cauchy_loss(self,absolute_error):
         '''
@@ -688,3 +687,14 @@ class MIX_model(PKM_model):
         self.loss = np.sum(np.abs(rho[0]))
         self.rho = rho
         return rho
+    
+    def set_sigma(self,sigma):
+        '''
+        Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
+        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
+        - 
+        Input
+        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
+        '''
+        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1), 'Shape of sigma is incorrect ({} should be {}).'.format(len(sigma),self.n_timepoints*(self.n_metabolites+1))
+        self.sigma = sigma
