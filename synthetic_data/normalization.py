@@ -18,7 +18,7 @@ def calculate_pqn(m_tensor):
     pqn = np.median(div,axis=0)
     return pqn
 
-def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,lambda_):
+def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,trans_fun,lambda_):
     '''
     Calculate normalization factor according to an PKM model.
     -
@@ -30,6 +30,7 @@ def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,los
     n_cpu            Int. Number of CPUs used in multiprocessing.
     n_replicates     Int. Number of Monte Carlo replicates used for optimization.
     loss_name        Str. Loss used for optimization.
+    trans_fun        Str. Trans_fun argument of em.PKM_model
     lambda_          Float. Weighting value for loss calculation.
     -
     Output:
@@ -38,7 +39,7 @@ def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,los
     '''
     
     # creating model and setting properties
-    model = em.PKM_model(timepoints,n_metabolites)
+    model = em.PKM_model(timepoints,n_metabolites,pkm_fun='bateman',trans_fun=trans_fun)
     model.set_fit_bounds(lb,ub)
     model.set_measured_data(m_tensor.flatten('F'))
     model.set_loss_function(loss_name)
@@ -51,7 +52,7 @@ def calculate_pkm(m_tensor,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,los
     out = model.optimize_monte_carlo(n_replicates=n_replicates,n_cpu=n_cpu)
     return model.get_sweat_volumes(), model
 
-def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,lambda_):
+def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replicates,loss_name,trans_fun,scale_fun,lambda_):
     '''
     Calculate normalization factor according to a MIX model.
     -
@@ -64,6 +65,8 @@ def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replica
     n_cpu            Int. Number of CPUs used in multiprocessing.
     n_replicates     Int. Number of Monte Carlo replicates used for optimization.
     loss_name        Str. Loss used for optimization.
+    trans_fun        Str. Trans_fun argument of em.MIX_model
+    scale_fun        Str. Scale_fun argument of em.MIX_model
     lambda_          Float. Weighting value for loss calculation.
     -
     Output:
@@ -72,7 +75,7 @@ def calculate_mix(m_tensor,sv_pqn,lb,ub,timepoints,n_metabolites,n_cpu,n_replica
     '''
     
     # creating model and setting properties
-    model = em.MIX_model(timepoints,n_metabolites,scaler='standard')
+    model = em.MIX_model(timepoints,n_metabolites,scale_fun=scale_fun,pkm_fun='bateman',trans_fun=trans_fun)
     # as the MIX model has one additional parameter the bounds have to be appended.
     model.set_fit_bounds(lb,ub)
     model.set_measured_data(m_tensor.flatten('F'),sv_pqn)
