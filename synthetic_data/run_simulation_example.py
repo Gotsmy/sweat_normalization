@@ -33,7 +33,8 @@ if __name__ == "__main__":
             n_known_metabolites = 4
             n_cpu               = 40
             n_mc_replicates     = 100
-            loss_name           = 'max_cauchy_loss'
+            full_lambda         = 1/(n_metabolites+1)
+            mini_lambda         = 1/(n_known_metabolites+1)
     ## END INPUT PARAMETERS ##
 
             # sample sv and e
@@ -83,23 +84,29 @@ if __name__ == "__main__":
                 t1 = time.time()
                 sv_pqn                      = norm.calculate_pqn(m_tensor)
                 t2 = time.time()
+                loss_name = 'max_cauchy_loss'
                 sv_pkm_full, pkm_full_model = norm.calculate_pkm(m_tensor,
                                                            full_lb,full_ub,timepoints,n_metabolites,
-                                                           n_cpu,n_mc_replicates,loss_name)
+                                                           n_cpu,n_mc_replicates,loss_name,'none',full_lambda)
                 t3 = time.time()
+                loss_name = 'cauchy_loss'
                 sv_pqn                      = norm.calculate_pqn(m_tensor)
                 sv_mix_full, mix_full_model = norm.calculate_mix(m_tensor,sv_pqn,
                                                             full_lb,full_ub,timepoints,n_metabolites,
-                                                            n_cpu,n_mc_replicates,loss_name)
+                                                            n_cpu,n_mc_replicates,loss_name,'log10',
+                                                            'standard',full_lambda)
                 t4 = time.time()
+                loss_name = 'max_cauchy_loss'
                 sv_pkm_mini, pkm_mini_model = norm.calculate_pkm(m_tensor[:4,:],
                                                            mini_lb,mini_ub,timepoints,n_known_metabolites,
-                                                           n_cpu,n_mc_replicates,loss_name)
+                                                           n_cpu,n_mc_replicates,loss_name,'none',mini_lambda)
                 t5 = time.time()
+                loss_name = 'cauchy_loss'
                 sv_pqn                      = norm.calculate_pqn(m_tensor)
                 sv_mix_mini, mix_mini_model = norm.calculate_mix(m_tensor[:4,:],sv_pqn,
                                                             mini_lb,mini_ub,timepoints,n_known_metabolites,
-                                                            n_cpu,n_mc_replicates,loss_name)
+                                                            n_cpu,n_mc_replicates,loss_name,'log10',
+                                                            'standard',mini_lambda)
                 t6 = time.time()
                 
                 results_time['PQN'].append(t2-t1)
@@ -126,7 +133,7 @@ if __name__ == "__main__":
                 
             # pickle results
             to_pickle = [results_time,results_sv,results_model,raw_values]
-            with open(f'simulation_example.pkl','wb') as file:
+            with open(f'simulation_results/simulation_example.pkl','wb') as file:
                     pickle.dump(to_pickle,file)
 
     print('done')

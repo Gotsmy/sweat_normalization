@@ -18,7 +18,7 @@ Scripts used to run simulatons v1-v3 are are located in ```synthetic_data/run_si
 Results of the simulations are located in ```synthetic_data/simulation_results/*.pkl```.
 
 To test a (shortened) simulation run you can execute ```synthetic_data/run_simulation_example.py```.
-Results of test simulation is located in ```synthetic_data/example_simulation.pkl```.
+Results of test simulation is located in ```synthetic_data/simulation_results/example_simulation.pkl```.
 
 ### PQN on Noisy Data
 An investigation on the performance of PQN on noisy data is located in ```synthetic_data/Noisy_PQN.ipynb```.
