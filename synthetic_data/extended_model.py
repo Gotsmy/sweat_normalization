@@ -51,7 +51,7 @@ def standard_scale(array):
 
 def mean_scale(array):
     '''
-    Mean scales (Z-transforms) an array. I.e. scales an array to a mean of 1.
+    Mean scales an array. I.e. scales an array to a mean of 1 by division.
     -
     Input
     array    numpy.ndarray.
@@ -62,6 +62,26 @@ def mean_scale(array):
     
     m = array/np.mean(array)
     return m
+
+def log_mean_scale(array):
+    '''
+    Mean scales an array. I.e. scales an array to a mean of 0 by substraction.
+    -
+    Input
+    array    numpy.ndarray.
+    -
+    Output
+    m        Scaled numpy.ndarray.
+    '''
+    
+    m = array-np.mean(array)
+    return m
+
+def no_scale(array):
+    '''
+    Returns the same array.
+    '''
+    return array
 
 def log10px(array,x=1e-8):
     '''
@@ -80,14 +100,15 @@ class PKM_model():
     function defined in self._fun.
     '''
     
-    def __init__(self,time,n_metabolites,fun='bateman'):
+    def __init__(self,time,n_metabolites,pkm_fun,trans_fun):
         '''
         Initialization.
         -
         Input
         time             numpy.ndarray of time points of measurements.
         n_metabolites    int. number of metabolites measured.
-        fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
+        pkm_fun          'bateman' or 'fun_1'. Function type used for PKM. 'fun_1' is a special case of 'bateman', where ka = ke.
+        trans_fun        'log10' or 'none'. Function that transforms measured data.
         -
         Output
         PKM_model class
@@ -96,7 +117,8 @@ class PKM_model():
         self.n_metabolites = n_metabolites
         self.n_timepoints  = len(self.time)
         self._time_tensor  = np.tile(self.time,self.n_metabolites).reshape(self.n_metabolites,-1)
-        self.fun_name      = fun
+        self.pkm_fun_name  = pkm_fun
+        self.trans_fun_name= trans_fun
         self.sigma         = np.ones(self.n_metabolites*self.n_timepoints)
         self._has_bounds   = False
         self._has_metabolite_names = False
@@ -107,162 +129,27 @@ class PKM_model():
         self.loss           = np.nan
         self._loss_function= None
         
-        if fun == 'bateman':
+        if pkm_fun == 'bateman':
             self._fun  = bateman
             self._fun_parameter_number = 5
             self._get_tensor_parameters = self._get_tensor_parameters_5
-        elif fun == 'fun_1':
+        elif pkm_fun == 'fun_1':
             self._fun = fun_1
             self._fun_parameter_number = 4
             self._get_tensor_parameters = self._get_tensor_parameters_4
         else:
-            print('self._fun could not be determined.')
+            raise ValueError('pkm_fun has to be either "bateman" or "fun_1".')
+            
+        if trans_fun == 'log10':
+            self.trans_fun = log10px
+        elif trans_fun == 'none':
+            self.trans_fun = no_scale
+        else:
+            raise ValueError('trans_fun has to be either "log10" or "none".')
             
         # generate initial parameters depending on how many are needed.
         self.parameters = np.concatenate((np.zeros(self.n_metabolites*self._fun_parameter_number),np.ones(len(self.time))),axis=0)
         
-            
-    def get_kinetic_parameters(self):
-        '''Returns array of all kinetic parameters of the model.'''
-        return self.parameters[:self.n_metabolites*self._fun_parameter_number]
-    
-    def get_sweat_volumes(self):
-        '''Returns array of all sweat volume parameters of the model.'''
-        return self.parameters[self.n_metabolites*self._fun_parameter_number:]
-    
-    def set_parameters(self,parameters):
-        '''Updates the parameter values of the model.'''
-        assert len(parameters) == self.n_metabolites*self._fun_parameter_number+self.n_timepoints, 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),self.n_metabolites*self._fun_parameter_number+len(self.time))
-        self.parameters = parameters
-        
-    def _get_tensor_parameters_5(self):
-        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (5, self.n_metabolites, self.n_timepoints)'''
-        tmp = self.get_kinetic_parameters()
-        p_k = np.repeat([tmp[0::5],tmp[1::5],tmp[2::5],tmp[3::5],tmp[4::5]],self.n_timepoints).reshape(-1,self.n_metabolites,self.n_timepoints)
-        return p_k
-
-    def _get_tensor_parameters_4(self):
-        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (4, self.n_metabolites, self.n_timepoints)'''
-        tmp = self.get_kinetic_parameters()
-        p_k = np.repeat([tmp[0::4],tmp[1::4],tmp[2::4],tmp[3::4]],self.n_timepoints).reshape(-1,self.n_metabolites,self.n_timepoints)
-        return p_k
-    
-    def set_loss_function(self,loss_name):
-        '''
-        Define a Loss Function to use during self._optimize(). 
-        Attention:
-        Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().
-        -
-        Input
-        loss_name   Str. 
-                    Default: None            (not implemented)
-                    Options: 
-                             Custom:    max_linear_loss, max_cauchy_loss, cauchy_loss
-                             Built_in:  linear, huber, soft_l1, cauchy, arctan
-        '''
-        if loss_name == 'max_linear_loss':
-            self._loss_function = self.max_linear_loss
-        elif loss_name == 'max_cauchy_loss':
-            self._loss_function = self.max_cauchy_loss
-        elif loss_name == 'cauchy_loss':
-            self._loss_function = self.cauchy_loss
-        elif loss_name in ['linear', 'huber', 'soft_l1', 'cauchy', 'arctan']:
-            print('''Attention:
-        Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().''')
-            self._loss_function = loss_name
-        else:
-            print(loss_name,'not found. Loss NOT updated.')
-        
-    
-    def fit(self,time,*parameters):
-        '''
-        Returns flattened M from the Equation M = C * V_sweat.
-        self.parameters IS     updated.
-        self.time       IS NOT updated.
-        -
-        Input
-        time           numpy.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
-        -
-        Output
-        y              numpy.ndarray of calculated M values of shape (self.n_metabolites*self.n_timepoints).
-        '''
-        self.parameters = np.array(parameters)
-        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
-        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
-        return y.flatten('F')
-    
-    def fit_tensor(self,time,*parameters):
-        '''
-        Returns unflattened M from the Equation M = C * V_sweat.
-        self.parameters IS     updated.
-        self.time       IS NOT updated.
-        -
-        Input
-        time           numpy.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
-        -
-        Output
-        y              numpy.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
-        '''
-        self.parameters = np.array(parameters)
-        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
-        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
-        return y
-    
-    def plot(self,time,*parameters):
-        '''
-        Returns flattened C from the Equation M = C * V_sweat.
-        self.parameters IS NOT updated.
-        self.time       IS NOT updated.
-        -
-        Input
-        time           numpy.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
-        -
-        Output
-        y              numpy.ndarray of calculated C values  of shape (self.n_metabolites*self.n_timepoints).
-        '''
-        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
-        tmp_n_timepoints = self.n_timepoints
-        tmp_parameters = self.parameters
-        self.n_timepoints=len(time)
-        self.parameters = np.array(parameters)
-        y = self._fun(time_tensor,self._get_tensor_parameters())
-        self.n_timepoints=tmp_n_timepoints
-        self.parameters = tmp_parameters
-        return y.flatten('F')
-    
-    def plot_tensor(self,time=None,parameters=None):
-        '''
-        Returns unflattened C from the Equation M = C * V_sweat.
-        self.parameters IS NOT updated.
-        self.time       IS NOT updated.
-        -
-        Input
-        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
-        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
-        -
-        Output
-        y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites, self.n_timepoints).
-                       Sweat volumes are NOT returned!
-        '''
-        if type(time) == type(None):
-            time = self.time
-        if type(parameters) == type(None):
-            parameters = self.parameters
-        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
-
-        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
-        tmp_n_timepoints = self.n_timepoints
-        tmp_parameters = self.parameters
-        self.n_timepoints=len(time)
-        self.parameters = np.array(parameters)
-        y = self._fun(time_tensor,self._get_tensor_parameters())
-        self.n_timepoints=tmp_n_timepoints
-        self.parameters = tmp_parameters
-        return y
-    
     def set_metabolite_names(self,metabolite_names):
         '''
         If metabolites are named it is possible to save their names in the model class.
@@ -311,27 +198,195 @@ class PKM_model():
         assert len(measured_data) == self.n_metabolites*self.n_timepoints, 'Shape of measured_data is incorrect ({} should be {}).'.format(len(measured_data),self.n_metabolites*self.n_timepoints)
         self.measured_data = measured_data
         self._has_measured_data = True
-        
-    def info(self):
+
+    def set_parameters(self,parameters):
+        '''Updates the parameter values of the model.'''
+        assert len(parameters) == self.n_metabolites*self._fun_parameter_number+self.n_timepoints, 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),self.n_metabolites*self._fun_parameter_number+len(self.time))
+        self.parameters = parameters
+
+    def set_loss_function(self,loss_name):
         '''
-        Convenience function that returns a pd.DataFrame with some overview information about self.
+        Define a Loss Function to use during self._optimize(). 
+        Attention:
+        Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().
+        -
+        Input
+        loss_name   Str. 
+                    Default: None            (not implemented)
+                    Options: 
+                             Custom:    max_linear_loss, max_cauchy_loss, cauchy_loss
+                             Built_in:  linear, huber, soft_l1, cauchy, arctan
+        '''
+        if loss_name == 'max_linear_loss':
+            self._loss_function = self.max_linear_loss
+        elif loss_name == 'max_cauchy_loss':
+            self._loss_function = self.max_cauchy_loss
+        elif loss_name == 'cauchy_loss':
+            self._loss_function = self.cauchy_loss
+        elif loss_name in ['linear', 'huber', 'soft_l1', 'cauchy', 'arctan']:
+            print('''Attention:
+        Built_in loss functions don't work with the Monte Carlo approach used in self.optimize_monte_carlo().''')
+            self._loss_function = loss_name
+        else:
+            raise ValueError('Loss not found.')
+            
+    def get_kinetic_parameters(self):
+        '''Returns array of all kinetic parameters of the model.'''
+        return self.parameters[:self.n_metabolites*self._fun_parameter_number]
+    
+    def get_sweat_volumes(self):
+        '''Returns array of all sweat volume parameters of the model.'''
+        return self.parameters[self.n_metabolites*self._fun_parameter_number:]
+            
+    def _get_tensor_parameters_5(self):
+        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (5, self.n_metabolites, self.n_timepoints)'''
+        tmp = self.get_kinetic_parameters()
+        p_k = np.repeat([tmp[0::5],tmp[1::5],tmp[2::5],tmp[3::5],tmp[4::5]],self.n_timepoints).reshape(-1,self.n_metabolites,self.n_timepoints)
+        return p_k
+
+    def _get_tensor_parameters_4(self):
+        '''Duplicates and reshapes kinetic parameters to be in a tensor of shape (4, self.n_metabolites, self.n_timepoints)'''
+        tmp = self.get_kinetic_parameters()
+        p_k = np.repeat([tmp[0::4],tmp[1::4],tmp[2::4],tmp[3::4]],self.n_timepoints).reshape(-1,self.n_metabolites,self.n_timepoints)
+        return p_k
+    
+    def fit(self,time,*parameters):
+        '''
+        Returns flattened M from the Equation M = C * V_sweat.
+        self.parameters IS     updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        DataFrame    pd.DataFrame
+        y              numpy.ndarray of calculated M values of shape (self.n_metabolites*self.n_timepoints).
         '''
-        model_properties = {
-            'n_metabolites':[self.n_metabolites],
-            'n_timepoints':[self.n_timepoints],
-            'fun':[self.fun_name],
-            'parameters':[len(self.parameters)],
-            'bounds':[self._has_bounds],
-            'measured data':[self._has_measured_data],
-            'metabolite names':[self._has_metabolite_names],
-            'is optimized':[self._is_optimized],
-            'optimization loss':[self.loss]
-        }
-        return pd.DataFrame(model_properties,index=['properties']).transpose()
+        self.parameters = np.array(parameters)
+        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes
+        y = self.trans_fun(y.flatten('F'))
+        return y
+        
+    def plot(self,time,*parameters):
+        '''
+        Returns flattened C from the Equation M = C * V_sweat.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
+        -
+        Output
+        y              numpy.ndarray of calculated C values  of shape (self.n_metabolites*self.n_timepoints).
+        '''
+        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        tmp_n_timepoints = self.n_timepoints
+        tmp_parameters = self.parameters
+        self.n_timepoints=len(time)
+        self.parameters = np.array(parameters)
+        y = self._fun(time_tensor,self._get_tensor_parameters())
+        self.n_timepoints=tmp_n_timepoints
+        self.parameters = tmp_parameters
+        return y.flatten('F')
     
+    def get_M_tensor(self):
+        '''
+        Returns unflattened M from the Equation M = C * V_sweat.
+        self.parameters IS     updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           numpy.ndarray of time points for which M is calculated.
+        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
+        -
+        Output
+        y              numpy.ndarray of calculated M values  of shape (self.n_metabolites, self.n_timepoints).
+        '''
+        sweat_volumes = np.tile(self.get_sweat_volumes(),self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y = self.trans_fun(self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes)
+        return y
+        
+    def get_M_df(self):
+        '''
+        Returns DataFrame with unflattened, transformed M from the Equation M = C * V_sweat.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        None
+        -
+        Output
+        y              pandas.DataFrame of shape (self.n_metabolites + 1, self.n_timepoints).
+        '''
+        assert self._has_metabolite_names, 'Model metabolite names are not set (see self.set_metabolite_names).'
+        M_tensor = self.get_M_tensor()
+        M_df = pd.DataFrame(index=np.arange(self.n_timepoints),dtype=float,columns=['time']+list(self.metabolite_names))
+        M_df.loc[:,'time'] = self.time
+        for i, metabolite in enumerate(self.metabolite_names):
+            M_df.loc[:,metabolite] = M_tensor[i]
+        return M_df
+
+    
+    def get_C_tensor(self,time=None,parameters=None):
+        '''
+        Returns unflattened C from the Equation M = C * V_sweat.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
+        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
+        -
+        Output
+        y              numpy.ndarray of calculated C values and sweat volumes of shape (self.n_metabolites, self.n_timepoints).
+                       Sweat volumes are NOT returned!
+        '''
+        if type(time) == type(None):
+            time = self.time
+        if type(parameters) == type(None):
+            parameters = self.parameters
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
+
+        time_tensor = np.tile(time,self.n_metabolites).reshape(self.n_metabolites,-1)
+        tmp_n_timepoints = self.n_timepoints
+        tmp_parameters = self.parameters
+        self.n_timepoints=len(time)
+        self.parameters = np.array(parameters)
+        y = self._fun(time_tensor,self._get_tensor_parameters())
+        self.n_timepoints=tmp_n_timepoints
+        self.parameters = tmp_parameters
+        return y
+    
+    def get_C_df(self,time=None,parameters=None):
+        '''
+        Returns pandas.DataFrame with C from the Equation M = C * V_sweat.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
+        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
+        -
+        Output
+        y              pandas.DataFrame of calculated C values and sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
+                       Sweat volumes are NOT returned!
+        '''
+        if type(time) == type(None):
+            time = np.array(self.time)
+        if type(parameters) == type(None):
+            parameters = np.array(self.parameters)
+        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
+        assert self._has_metabolite_names, 'Model metabolite names are not set (see self.set_metabolite_names).'
+        C_tensor = self.get_C_tensor(time=time,parameters=parameters)
+        C_df = pd.DataFrame(index=np.arange(len(time)),dtype=float,columns=['time']+list(self.metabolite_names))
+        C_df.loc[:,'time'] = time
+        for i, metabolite in enumerate(self.metabolite_names):
+            C_df.loc[:,metabolite] = C_tensor[i,:]
+        return C_df
+            
     def _optimize(self,seed):
         '''
         Internal function that optimizes the model to given measured data.
@@ -452,58 +507,60 @@ class PKM_model():
         self.loss = np.sum(np.abs(rho[0]))
         self.rho = rho
         return rho
-    
-    def get_C_df(self,time=None,parameters=None):
+
+    def info(self):
         '''
-        Returns pandas.DataFrame with C from the Equation M = C * V_sweat.
-        self.parameters IS NOT updated.
-        self.time       IS NOT updated.
-        -
-        Input
-        time           None or numpy.ndarray of time points for which M is calculated. If None self.time is used.
-        parameters     None or parameters as floats. Lists or numpy.ndarrays lead to errors down the line. If None self.parameters are used.
+        Convenience function that returns a pd.DataFrame with some overview information about self.
         -
         Output
-        y              pandas.DataFrame of calculated C values and sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
-                       Sweat volumes are NOT returned!
+        DataFrame    pd.DataFrame
         '''
-        if type(time) == type(None):
-            time = np.array(self.time)
-        if type(parameters) == type(None):
-            parameters = np.array(self.parameters)
-        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
-        assert self._has_metabolite_names, 'Model metabolite names are not set (see self.set_metabolite_names).'
-        C_tensor = self.plot_tensor(time=time,parameters=parameters)
-        C_df = pd.DataFrame(index=np.arange(len(time)),dtype=float,columns=['time']+list(self.metabolite_names))
-        C_df.loc[:,'time'] = time
-        for i, metabolite in enumerate(self.metabolite_names):
-            C_df.loc[:,metabolite] = C_tensor[i,:]
-        return C_df
+        model_properties = {
+            'n_metabolites':[self.n_metabolites],
+            'n_timepoints':[self.n_timepoints],
+            'pkm_fun':[self.pkm_fun_name],
+            'trans_fun':[self.trans_fun_name],
+            'parameters':[len(self.parameters)],
+            'bounds':[self._has_bounds],
+            'measured data':[self._has_measured_data],
+            'metabolite names':[self._has_metabolite_names],
+            'is optimized':[self._is_optimized],
+            'optimization loss':[self.loss]
+        }
+        return pd.DataFrame(model_properties,index=['PKM Model']).transpose()
+
     
 # MIX model
 class MIX_model(PKM_model):
-    def __init__(self,time,n_metabolites,fun='bateman',scaler='standard'):
+    def __init__(self,time,n_metabolites,pkm_fun,scale_fun,trans_fun):
         '''
         Initialization.
         -
         Input
         time             numpy.ndarray of time points of measurements.
         n_metabolites    int. number of metabolites measured.
-        fun              str. Function type which is used for kinetic fitting. Implemented are "bateman" and "fun_1", default is "bateman".
-        scaler           callable or str 'standard'/'mean'. Function that scales PQN.
+        pkm_fun          'bateman' or 'fun_1'. Function type used for PKM. 'fun_1' is a special case of 'bateman', where ka = ke.
+        scale_fun        'standard' or 'mean'. Function that scales PQN.
+        trans_fun        'log10' or 'none'. Function that transforms measured data.
         -
         Output
         MIX_model class
         '''
         
-        super().__init__(time,n_metabolites,fun='bateman')
+        super().__init__(time,n_metabolites,pkm_fun,trans_fun)
         self.sigma = np.ones((self.n_metabolites+1)*self.n_timepoints)
-        if scaler == 'standard':
-            self.scaler = standard_scale
-        elif scaler == 'mean':
-            self.scaler = mean_scale
+        if scale_fun == 'standard':
+            self.scale_fun = standard_scale
+            self.scale_fun_name = scale_fun
+        elif scale_fun == 'mean':
+            if trans_fun == 'log10':
+                self.scale_fun = log_mean_scale
+                self.scale_fun_name = 'log_mean'
+            elif trans_fun == 'none':
+                self.scale_fun = mean_scale
+                self.scale_fun_name = scale_fun
         else:
-            self.scaler = scaler
+            raise ValueError('scale_fun has to be "standard" or "mean".')
         
     def set_measured_data(self,measured_data,pqn_data):
         '''
@@ -515,12 +572,23 @@ class MIX_model(PKM_model):
         '''
         assert len(measured_data) == self.n_metabolites*self.n_timepoints, 'Shape of measured_data is incorrect ({} should be {}).'.format(len(measured_data),self.n_metabolites*self.n_timepoints)
         assert len(pqn_data) == self.n_timepoints, 'Shape of pqn_data is incorrect ({} should be {}).'.format(len(pqn_data),self.n_timepoints)
-        self.measured_data = np.concatenate([measured_data,self.scaler(pqn_data)])
+        self.measured_data = np.concatenate([self.trans_fun(measured_data),self.scale_fun(self.trans_fun(pqn_data))])
         self._has_measured_data = True
+        
+    def set_sigma(self,sigma):
+        '''
+        Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
+        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
+        - 
+        Input
+        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
+        '''
+        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1), 'Shape of sigma is incorrect ({} should be {}).'.format(len(sigma),self.n_timepoints*(self.n_metabolites+1))
+        self.sigma = sigma
         
     def fit(self,time,*parameters):
         '''
-        Returns flattened M from the Equation M = C * V_sweat concatenated to the sweat volume array.
+        Returns flattened, transformed M from the Equation M = C * V_sweat concatenated to the scaled, transformed sweat volume array.
         self.parameters IS     updated.
         self.time       IS NOT updated.
         -
@@ -529,35 +597,15 @@ class MIX_model(PKM_model):
         *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
         -
         Output
-        y              numpy.ndarray of calculated M values.
+        y              numpy.ndarray of calculated and concatenated self.trans_fun(M) and self.scale_fun(self.trans_fun(V_sweat)) values.
         '''
         assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
+        
         self.parameters = np.array(parameters)
         sweat_volumes = self.get_sweat_volumes()
         sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
         y1 = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
-        y  = np.concatenate([y1.flatten('F'),self.scaler(sweat_volumes)])
-        return y
-    
-    def fit_tensor(self,time,*parameters):
-        '''
-        Returns unflattened M from the Equation M = C * V_sweat.
-        self.parameters IS     updated.
-        self.time       IS NOT updated.
-        -
-        Input
-        time           numpy.ndarray of time points for which M is calculated.
-        *parameters    Parameters as floats. Lists or numpy.ndarrays lead to errors down the line.
-        -
-        Output
-        y              numpy.ndarray of calculated M values and scaled (!) sweat volumes of shape (self.n_metabolites + 1, self.n_timepoints).
-        '''
-        assert len(parameters) == len(self.parameters), 'Shape of parameters is incorrect ({} should be {}).'.format(len(parameters),len(self.parameters))
-        self.parameters = np.array(parameters)
-        sweat_volumes = self.get_sweat_volumes()
-        sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
-        y1 = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
-        y  = np.vstack([y1,self.scaler(sweat_volumes)])
+        y  = np.concatenate([self.trans_fun(y1.flatten('F')),self.scale_fun(self.trans_fun(sweat_volumes))])
         return y
     
     def plot(self,time,*parameters):
@@ -581,14 +629,55 @@ class MIX_model(PKM_model):
         self.parameters = np.array(parameters)
         y1 = self._fun(time_tensor,self._get_tensor_parameters())
         y2 = self.get_sweat_volumes()
-        y  = np.concatenate([y1.flatten('F'),y2])
+        y  = np.concatenate([self.trans_fun(y1.flatten('F')),self.trans_fun(y2)])
         self.n_timepoints=tmp_n_timepoints
         self.parameters = tmp_parameters
         return y
     
-    def plot_tensor(self,time=None,parameters=None):
+    def get_M_tensor(self):
         '''
-        Returns flattened C from the Equation M = C * V_sweat concatenated to the sweat volume array.
+        Returns unflattened, transformed M from the Equation M = C * V_sweat and the scaled, transformed sweat volume array.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        None
+        -
+        Output
+        y              numpy.ndarray of calculated self.trans_fun(M) and self.scale_fun(self.trans_fun(V_sweat)) values.
+        '''
+        time = np.array(self.time)
+        parameters = np.array(self.parameters)
+        sweat_volumes = self.get_sweat_volumes()
+        sweat_volumes_tensor = np.tile(sweat_volumes,self.n_metabolites).reshape(self.n_metabolites,self.n_timepoints)
+        y1 = self._fun(self._time_tensor,self._get_tensor_parameters())*sweat_volumes_tensor
+        y  = np.vstack([self.trans_fun(y1),self.scale_fun(self.trans_fun(sweat_volumes))])
+        return y
+    
+    def get_M_df(self):
+        '''
+        Returns DataFrame with unflattened, transformed M from the Equation M = C * V_sweat and the scaled, transformed sweat volume array.
+        self.parameters IS NOT updated.
+        self.time       IS NOT updated.
+        -
+        Input
+        None
+        -
+        Output
+        y              pandas.DataFrame of shape (self.n_metabolites + 2, self.n_timepoints).
+        '''
+        assert self._has_metabolite_names, 'Model metabolite names are not set (see self.set_metabolite_names).'
+        M_tensor = self.get_M_tensor()
+        M_df = pd.DataFrame(index=np.arange(self.n_timepoints),dtype=float,columns=['time','V_sweat']+list(self.metabolite_names))
+        M_df.loc[:,'time'] = self.time
+        M_df.loc[:,'V_sweat'] = M_tensor[-1]
+        for i, metabolite in enumerate(self.metabolite_names):
+            M_df.loc[:,metabolite] = M_tensor[i]
+        return M_df
+    
+    def get_C_tensor(self,time=None,parameters=None):
+        '''
+        Returns C from the Equation M = C * V_sweat concatenated to the sweat volume array.
         self.parameters IS NOT updated.
         self.time       IS NOT updated.
         -
@@ -619,14 +708,11 @@ class MIX_model(PKM_model):
         '''
         Takes array of absolute error, calculates relative error. From the maximum of both Linear loss as implemented in SciPy is calculated.
         '''
-        # back-scale scaled PQN error
-        if self.scaler == standard_scale:
-            # because the error is the sum of squares, the factor also has to be squared
-            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.std(self.get_sweat_volumes())**2
-        elif self.scaler == mean_scale:
-            pass
-        else:
-            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma().')
+        # Back-scale scaled PQN error
+        if self.scale_fun_name == 'standard':
+            # Because the error is the sum of squares, the std(V_sweat) also has to be squared, i.e. var(V_sweat).
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.var(self.trans_fun(self.get_sweat_volumes()))
+
         # get true values
         y = self.plot(self.time,*self.parameters)
         relative_error = np.divide(absolute_error, y, out=absolute_error.copy(), where=y!=0)
@@ -643,14 +729,11 @@ class MIX_model(PKM_model):
         '''
         Takes array of absolute error, calculates relative error. From the maximum of both Cauchy loss as implemented in SciPy is calculated.
         '''
-        # back-scale scaled PQN error
-        if self.scaler == standard_scale:
-            # because the error is the sum of squares, the factor also has to be squared
-            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.var(self.get_sweat_volumes())
-        elif self.scaler == mean_scale:
-            pass
-        else:
-            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma.')
+        # Back-scale scaled PQN error
+        if self.scale_fun_name == 'standard':
+            # Because the error is the sum of squares, the std(V_sweat) also has to be squared, i.e. var(V_sweat).
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.var(self.trans_fun(self.get_sweat_volumes()))
+            
         # get true values
         y = self.plot(self.time,*self.parameters)
         relative_error = np.divide(absolute_error, y, out=absolute_error.copy(), where=y!=0)
@@ -670,14 +753,11 @@ class MIX_model(PKM_model):
         Takes array of absolute error. Cauchy loss as implemented in SciPy is calculated.
         '''
         
-        # back-scale scaled PQN error
-        if self.scaler == standard_scale:
-            # because the error is the sum of squares, the factor also has to be squared
-            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.std(self.get_sweat_volumes())**2
-        elif self.scaler == mean_scale:
-            pass
-        else:
-            print('Warning! Scaled PQN loss term is not scaled back! You can change the weighting of the loss term over self.set_sigma.')
+        # Back-scale scaled PQN error
+        if self.scale_fun_name == 'standard':
+            # Because the error is the sum of squares, the std(V_sweat) also has to be squared, i.e. var(V_sweat).
+            absolute_error[-self.n_timepoints:] = absolute_error[-self.n_timepoints:]*np.var(self.trans_fun(self.get_sweat_volumes()))
+            
         z = absolute_error
         rho = np.empty((3,len(z)))
         rho[0] = np.log1p(z)
@@ -687,14 +767,25 @@ class MIX_model(PKM_model):
         self.loss = np.sum(np.abs(rho[0]))
         self.rho = rho
         return rho
-    
-    def set_sigma(self,sigma):
+        
+    def info(self):
         '''
-        Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
-        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
-        - 
-        Input
-        sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
+        Convenience function that returns a pd.DataFrame with some overview information about self.
+        -
+        Output
+        DataFrame    pd.DataFrame
         '''
-        assert len(sigma) == self.n_timepoints*(self.n_metabolites+1), 'Shape of sigma is incorrect ({} should be {}).'.format(len(sigma),self.n_timepoints*(self.n_metabolites+1))
-        self.sigma = sigma
+        model_properties = {
+            'n_metabolites':[self.n_metabolites],
+            'n_timepoints':[self.n_timepoints],
+            'pkm_fun':[self.pkm_fun_name],
+            'trans_fun':[self.trans_fun_name],
+            'scale_fun':[self.scale_fun_name],
+            'parameters':[len(self.parameters)],
+            'bounds':[self._has_bounds],
+            'measured data':[self._has_measured_data],
+            'metabolite names':[self._has_metabolite_names],
+            'is optimized':[self._is_optimized],
+            'optimization loss':[self.loss]
+        }
+        return pd.DataFrame(model_properties,index=['MIX Model']).transpose()
