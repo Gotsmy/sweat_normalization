@@ -207,7 +207,7 @@ def generate_random_from_real_data(n_known_metabolites,n_metabolites,toy_paramet
     
     n_timepoints = len(timepoints)
     
-    norm_tmp = pd.read_csv('../real_data/data/normalized_20_timepoints.csv',index_col=0)
+    norm_tmp = pd.read_csv('../real_data/Brunmair_2021/data/normalized_20_timepoints.csv',index_col=0)
     sampled = norm_tmp.loc[:,random.sample(list(norm_tmp.columns),n_metabolites-n_known_metabolites)]
     random_c_tensor = sampled.T.values
     
