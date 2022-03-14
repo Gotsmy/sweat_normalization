@@ -179,7 +179,7 @@ class PKM_model():
     def set_sigma(self,sigma):
         '''
         Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
-        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
+        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2). I. e. sigma is the reciprocal of lambda.
         - 
         Input
         sigma    List or array of shape (self.n_timepoints * self.n_metabolites).
@@ -578,7 +578,7 @@ class MIX_model(PKM_model):
     def set_sigma(self,sigma):
         '''
         Set sigma for model optimization. It is parsed into the scipy.optimize.curve_fit function.
-        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2).
+        There the weighted error residuals are calculated according to chisq = sum((r / sigma) ** 2). I. e. sigma is the reciprocal of lambda.
         - 
         Input
         sigma    List or array of shape (self.n_timepoints * self.n_metabolites + 1).
