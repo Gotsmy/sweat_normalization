@@ -1,5 +1,3 @@
-#!/home/users/mgotsmy/envs/robust_loss/bin/python
-
 import os
 os.environ["OMP_NUM_THREADS"] = str(1)
 import numpy as np
