@@ -1,1 +1,0 @@
-- fit_tensor & plot_tensor functions are not functioning for extended_mix_model.

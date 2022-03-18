@@ -1,6 +1,7 @@
 # Probabilistic quotient's work \& pharmacokinetics' contribution: countering size effect in metabolic time series measurements
 
-Creation and comparison of models for finger sweat normalization. A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.476591](https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg)](https://doi.org/10.1101/2022.01.17.476591).
+Creation and comparison of PQN, PKM, and MIX models for size effect normalization. 
+A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.476591](https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg)](https://doi.org/10.1101/2022.01.17.476591).
 
 ## Prerequisites
 Python 3.7 and packages listed in requirements.txt.
@@ -13,15 +14,33 @@ Classes of PKM and MIX model are located in ```synthetic_data/extended_model.py`
 Functions for synthetic data generation are located in ```synthetic_data/synthetic_data_generation.py```.
 Functions for model initialization and optimization are located in ```synthetic_data/normalization.py```.
 
+### Normalization Model Comparison
 Scripts used to run simulatons v1-v3 are are located in ```synthetic_data/run_simulation_v*.py```.
-To test a (shortened) simulation run you can execute ```synthetic_data/run_simulation_example.py```.
+Results of the simulations are located in ```synthetic_data/simulation_results/*.pkl```.
 
-Results of the simulations are located in ```synthetic_data/simulation_results/*```.
+To test a (shortened) simulation run you can execute ```synthetic_data/run_simulation_example.py```.
+Results of test simulation is located in ```synthetic_data/simulation_results/example_simulation.pkl```.
+
+### PQN on Noisy Data
+An investigation on the performance of PQN on noisy data is located in ```synthetic_data/Noisy_PQN.ipynb```.
+Results of the simulation performed there is stored in ```synthetic_data/other_results/noisy_pqn.pkl```.
+
+### Lambda and Variance
+An investigation of the influence on the weighting parameter lambda on the variance of fitted sweat volumes is done in ```synthetic_data/Lambda_Variance.ipynb```. 
+Results of the simulations are stored in ```synthetic_data/other_results/lambda_variance*.pkl```.
 
 ## Real Finger Sweat Data Simulations
+Jupyter Notebooks that run real data simulations are located at ```real_data/Brunmair_2021/PKM_Sub_2.ipynb``` and ```real_data/Brunmair_2021/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
+The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2*``` for PKM_mininimal and MIX_minimal respectively.
+The script for data preprocessing is located in ```real_data/Brunmair_2021/Preprocessing.ipynb```.
 
-Jupyter Notebooks that run real data simulations are located at ```real_data/EM_Sub_2.ipynb``` and ```real_data/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
-The results of these simuations are located in ```real_data/EM_sub_2/*```, ```real_data/MIX_sub_2_n_EM```, and ```real_data/MIX_sub_2_n_PQN/*``` for PKM_mininimal, equal weighting MIX_minimal, and metabolite-wise weighted MIX_minimal respectively.
+## Real Blood Plasma Data Simulations
+The Jupyter Notebook that runs real blood plasma data simulations is located at ```real_data/Panitchpakdi_2021/DPH_Sub_2_models.ipynb```.
+The results of these simulations are located in ```real_data/Panitchpakdi_2021/Sub_2_plasma.pkl```.
+The script for data preprocessing is located in ```real_data/Panitchpakdi_2021/Preprocessing.ipynb```.
 
 ##  Figures from the Manuscript
-A Jupyter Notebook that replicates Figures used in the manuscript is located in the base (```Figures.ipynb```).
+A Jupyter Notebook that replicates all figures used in the manuscript is located at ```/Figures.ipynb```.
+
+## Licensing
+All original code is licensed under the GNU GPL version 3.
