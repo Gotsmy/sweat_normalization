@@ -28,13 +28,13 @@ Results of the simulation performed there is stored in ```synthetic_data/other_r
 
 ### Further Analysis
 The script to test the difference of PQN and MIX_mini in performance on noisy data (Figure 9) is located in ```synthetic_data/comparison_with_noise.py```.
-The results are located in ```synthetic_data/other_results/comparison_with_noise_results/```.
+The results are located in ```synthetic_data/other_results/comparison_with_noise_results/*```.
 
 The script to test the lambda hyperparameter (Supplementary Figure S3) is located in ```synthetic_data/search_lambda_v3.py```.
-The results are located in ```synthetic_data/other_results/lambda_results/```.
+The results are located in ```synthetic_data/other_results/lambda_results/*```.
 
 The script to test different loss function and transformation function combinations (Supplementary Figure S3) is located in ```synthetic_data/search_L_T_v3.py```.
-The results are located in ```synthetic_data/other_results/L_T_results/```.
+The results are located in ```synthetic_data/other_results/L_T_results/*```.
 
 An investigation of the influence on the weighting parameter lambda on the variance of fitted sweat volumes (Supplementary Figure S11) is done in ```synthetic_data/Lambda_Variance.ipynb```. 
 Results of the simulations are stored in ```synthetic_data/other_results/lambda_variance*.pkl```.
