@@ -41,7 +41,7 @@ Results of the simulations are stored in ```synthetic_data/other_results/lambda_
 
 ## Real Finger Sweat Data Simulations
 Jupyter Notebooks that run real data simulations are located at ```real_data/Brunmair_2021/PKM_Sub_2.ipynb``` and ```real_data/Brunmair_2021/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
-The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2*``` for PKM_mininimal and MIX_minimal respectively.
+The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2/*``` for PKM_mininimal and MIX_minimal respectively.
 The script for data preprocessing is located in ```real_data/Brunmair_2021/Preprocessing.ipynb```.
 
 ## Real Blood Plasma Data Simulations
