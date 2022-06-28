@@ -19,7 +19,7 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    python_requires="==3.7",
+    python_requires=">=3.7,<3.8",
     include_package_data=True,
     package_data={'': ['data/*.csv']},
 )
