@@ -14,7 +14,7 @@ python setup.py install
 ```
 
 ### 1.3 Testing Installation
-To test a (shortened) simulation run you can execute 
+To test if the installation was successful, you can execute a (shortened) simulation run.
 ```
 python tests/run_simulation_example.py
 ```
