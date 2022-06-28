@@ -5,29 +5,19 @@ A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.4
 
 ## 1. Installation
 
-### 1.1 Prerequisites
-Python 3.7 and packages listed in requirements.txt.
+### 1.1 Prerequisites and Installation
+
+The ```size_effect_normalization``` package requires Python 3.7 and packages listed in ```requirements.txt```. You can install the ```size_effect_normalization``` package via ```setup.py```.
 ```
 pip install -r requirements.txt
-```
-
-### 1.2 Installing Size Effect Normalization Scripts
-Classes of PKM and MIX model are located in
-```src/size_effect_normalization/extended_model.py```.
-Functions for synthetic data generation are located in 
-```src/size_effect_normalization/synthetic_data_generation.py```.
-Functions for model initialization and optimization are located in
-```src/size_effect_normalization/normalization.py```.
-
-You can install the scripts as package by executing following command.
-```
 python setup.py install
 ```
 
-
 ### 1.3 Testing Installation
 To test a (shortened) simulation run you can execute ```tests/run_simulation_example.py```.
-Results of test simulation is located in ```synthetic_data/simulation_results/example_simulation.pkl```.
+
+### 1.4 Tutorial
+A tutorial for MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/Tutorial.ipynb```.
 
 ## 2. Synthetic Data Simulations
 
