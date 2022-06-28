@@ -40,7 +40,7 @@ An investigation on the performance of PQN on noisy data (Figure 8) is located i
 Results of the simulation performed there is stored in ```synthetic_data/other_results/noisy_pqn.pkl```.
 
 ### 2.3 Further Analysis
-The script to test the difference of PQN and MIX_mini in performance on noisy data (Figure 9) is located in ```synthetic_data/comparison_with_noise.py```.
+The script to test the difference of PQN and MIX<sub>minimal</sub> in performance on noisy data (Figure 9) is located in ```synthetic_data/comparison_with_noise.py```.
 The results are located in ```synthetic_data/other_results/comparison_with_noise_results/*```.
 
 The script to test the lambda hyperparameter (Supplementary Figure S3) is located in ```synthetic_data/search_lambda_v3.py```.
@@ -54,7 +54,7 @@ Results of the simulations are stored in ```synthetic_data/other_results/lambda_
 
 ## 3. Real Finger Sweat Data Simulations
 Jupyter Notebooks that run real data simulations are located at ```real_data/Brunmair_2021/PKM_Sub_2.ipynb``` and ```real_data/Brunmair_2021/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
-The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2/*``` for PKM_mininimal and MIX_minimal respectively.
+The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2/*``` for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> respectively.
 The script for data preprocessing is located in ```real_data/Brunmair_2021/Preprocessing.ipynb```.
 
 ## 4. Real Blood Plasma Data Simulations
