@@ -14,7 +14,10 @@ python setup.py install
 ```
 
 ### 1.3 Testing Installation
-To test a (shortened) simulation run you can execute ```tests/run_simulation_example.py```.
+To test a (shortened) simulation run you can execute 
+```
+python tests/run_simulation_example.py
+```.
 
 ### 1.4 Tutorial
 A tutorial for MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/Tutorial.ipynb```.
