@@ -19,7 +19,14 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    python_requires="==3.7",
+    python_requires=">=3.7,<3.8",
     include_package_data=True,
     package_data={'': ['data/*.csv']},
+    install_requires=['importlib-metadata==3.7.3',
+                      'matplotlib==3.3.4',
+                      'numpy==1.20.1',
+                      'pandas==1.3.0',
+                      'pickleshare==0.7.5',
+                      'scipy==1.7.0',
+                      'tqdm==4.50.0',]
 )
