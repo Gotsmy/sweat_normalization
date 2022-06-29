@@ -3,7 +3,9 @@
 Creation and comparison of PQN, PKM, and MIX models for size effect normalization. 
 A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.476591](https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg)](https://doi.org/10.1101/2022.01.17.476591).
 
-<center><img src="graphical_abstract.png" alt="graphical abstract" width="50%"/></center>
+<p align="center">
+    <img src="graphical_abstract.png" alt="graphical abstract" width="50%"/>
+</p>
 
 ## 1. Size Effect Normalization Python Package
 
