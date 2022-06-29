@@ -3,6 +3,8 @@
 Creation and comparison of PQN, PKM, and MIX models for size effect normalization. 
 A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.476591](https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg)](https://doi.org/10.1101/2022.01.17.476591).
 
+<center><img src="graphical_abstract.png" alt="graphical abstract" width="50%"/></center>
+
 ## 1. Size Effect Normalization Python Package
 
 ### 1.1 Prerequisites and Installation
@@ -14,13 +16,13 @@ python setup.py install
 ```
 
 ### 1.3 Testing Installation
-To test if the installation was successful, you can execute a (shortened) simulation run.
+To test if the installation was successful you can execute a (shortened) simulation run.
 ```
 python tests/run_simulation_example.py
 ```
 
 ### 1.4 Tutorial
-A tutorial for MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/Tutorial.ipynb```.
+A tutorial for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/Tutorial.ipynb```.
 
 ## 2. Synthetic Data Simulations
 
@@ -45,12 +47,14 @@ The results are located in ```synthetic_data/other_results/L_T_results/*```.
 An investigation of the influence on the weighting parameter lambda on the variance of fitted sweat volumes (Supplementary Figure S11) is done in ```synthetic_data/Lambda_Variance.ipynb```. 
 Results of the simulations are stored in ```synthetic_data/other_results/lambda_variance*.pkl```.
 
-## 3. Real Finger Sweat Data Simulations
+## 3. Real Data Simulations
+
+### 3.1 Finger Sweat
 Jupyter Notebooks that run real data simulations are located at ```real_data/Brunmair_2021/PKM_Sub_2.ipynb``` and ```real_data/Brunmair_2021/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
 The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2/*``` for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> respectively.
 The script for data preprocessing is located in ```real_data/Brunmair_2021/Preprocessing.ipynb```.
 
-## 4. Real Blood Plasma Data Simulations
+### 3.2 Blood Plasma
 The Jupyter Notebook that runs real blood plasma data simulations is located at ```real_data/Panitchpakdi_2021/DPH_Sub_2_models.ipynb```.
 The results of these simulations are located in ```real_data/Panitchpakdi_2021/Sub_2_plasma.pkl```.
 The script for data preprocessing is located in ```real_data/Panitchpakdi_2021/Preprocessing.ipynb```.
