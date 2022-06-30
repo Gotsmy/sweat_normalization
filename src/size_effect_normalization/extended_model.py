@@ -65,7 +65,7 @@ def mean_scale(array):
 
 def log_mean_scale(array):
     '''
-    Mean scales an array. I.e. scales an array to a mean of 0 by substraction.
+    Mean scales an array. I.e. scales an array to a mean of 0 by subtraction.
     -
     Input
     array    numpy.ndarray.
