@@ -1,6 +1,6 @@
 # Probabilistic quotient's work \& pharmacokinetics' contribution: countering size effect in metabolic time series measurements
 
-Creation and comparison of PQN, PKM, and MIX models for size effect normalization. 
+Creation and comparison of PQN, PKM, and MIX models for size effect normalization.
 A preprint of the manuscript is available on bioRxiv [![DOI:10.1101/2022.01.17.476591](https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg)](https://doi.org/10.1101/2022.01.17.476591).
 
 <p align="center">
@@ -17,14 +17,17 @@ pip install -r requirements.txt
 python setup.py install
 ```
 
-### 1.3 Testing Installation
+### 1.2 Testing Installation
 To test if the installation was successful you can execute a (shortened) simulation run.
 ```
 python tests/run_simulation_example.py
 ```
 
-### 1.4 Tutorial
-A tutorial for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/Tutorial.ipynb```.
+### 1.3 Tutorial
+A tutorial for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/source/data/Tutorial.ipynb```.
+
+### 1.4 Documentation
+A "Read the Docs" style documentation of the ```size_effect_normalization``` package can be accessed <a href="https://homepage.univie.ac.at/mathias.gotsmy/size_effect_normalization/index.html" title="documentation link">here</a>.
 
 ## 2. Synthetic Data Simulations
 
@@ -46,13 +49,13 @@ The results are located in ```synthetic_data/other_results/lambda_results/*```.
 The script to test different loss function and transformation function combinations (Supplementary Figure S3) is located in ```synthetic_data/search_L_T_v3.py```.
 The results are located in ```synthetic_data/other_results/L_T_results/*```.
 
-An investigation of the influence on the weighting parameter lambda on the variance of fitted sweat volumes (Supplementary Figure S11) is done in ```synthetic_data/Lambda_Variance.ipynb```. 
+An investigation of the influence on the weighting parameter lambda on the variance of fitted sweat volumes (Supplementary Figure S11) is done in ```synthetic_data/Lambda_Variance.ipynb```.
 Results of the simulations are stored in ```synthetic_data/other_results/lambda_variance*.pkl```.
 
 ## 3. Real Data Simulations
 
 ### 3.1 Finger Sweat
-Jupyter Notebooks that run real data simulations are located at ```real_data/Brunmair_2021/PKM_Sub_2.ipynb``` and ```real_data/Brunmair_2021/MIX_Sub_2.ipynb``` for PKM and MIX respectively. 
+Jupyter Notebooks that run real data simulations are located at ```real_data/Brunmair_2021/PKM_Sub_2.ipynb``` and ```real_data/Brunmair_2021/MIX_Sub_2.ipynb``` for PKM and MIX respectively.
 The results of these simuations are located in ```real_data/Brunmair_2021/PKM_sub_2/*``` and ```real_data/Brunmair_2021/MIX_sub_2/*``` for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> respectively.
 The script for data preprocessing is located in ```real_data/Brunmair_2021/Preprocessing.ipynb```.
 
