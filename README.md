@@ -27,7 +27,7 @@ python tests/run_simulation_example.py
 A tutorial for PKM<sub>minimal</sub> and MIX<sub>minimal</sub> normalization is available as Jupyter Notebook in ```docs/source/data/Tutorial.ipynb```.
 
 ### 1.4 Documentation
-A "Read the Docs" style documentation of the ```size_effect_normalization``` package can be accessed <a href="https://google.com" title="documentation link">here</a>.
+A "Read the Docs" style documentation of the ```size_effect_normalization``` package can be accessed <a href="https://homepage.univie.ac.at/mathias.gotsmy/size_effect_normalization/index.html" title="documentation link">here</a>.
 
 ## 2. Synthetic Data Simulations
 
