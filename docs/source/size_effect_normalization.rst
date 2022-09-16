@@ -1,7 +1,7 @@
 Package
 ===================================
 
-extended\_model Module
+Extended Model Module
 --------------------------------------------------
 
 .. automodule:: size_effect_normalization.extended_model
@@ -9,7 +9,7 @@ extended\_model Module
    :undoc-members:
    :show-inheritance:
 
-normalization Module
+Normalization Module
 ------------------------------------------------
 
 .. automodule:: size_effect_normalization.normalization
@@ -17,7 +17,7 @@ normalization Module
    :undoc-members:
    :show-inheritance:
 
-synthetic\_data\_generation Module
+Synthetic Data Generation Module
 --------------------------------------------------------------
 
 .. automodule:: size_effect_normalization.synthetic_data_generation
