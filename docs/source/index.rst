@@ -8,11 +8,11 @@ Welcome to Size Effect Normalization's documentation!
 
 This package is published alongside the paper "Probabilistic quotient's work and
 pharmacokinetics' contribution: countering size effect in metabolic time series
-measurements" on BioRXiv |DOI|. The code is published on `GitHub
+measurements" on BMC Bioinformatics |DOI|. The code is published on `GitHub
 <https://github.com/Gotsmy/sweat_normalization>`_.
 
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.1007/978-3-319-76207-4_15.svg
-   :target: https://doi.org/10.1101/2022.01.17.476591
+   :target: https://doi.org/10.1186/s12859-022-04918-1
 
 .. image:: ../../graphical_abstract.png
   :target: index.html
